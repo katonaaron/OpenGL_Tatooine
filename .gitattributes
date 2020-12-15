@@ -1,0 +1,6 @@
+/LICENSE filter=lfs diff=lfs merge=lfs -text
+*.md filter=lfs diff=lfs merge=lfs -text
+* !text !filter !merge !diff
+*.obj filter=lfs diff=lfs merge=lfs -text
+models/* filter=lfs diff=lfs merge=lfs -text
+*.blend* filter=lfs diff=lfs merge=lfs -text
