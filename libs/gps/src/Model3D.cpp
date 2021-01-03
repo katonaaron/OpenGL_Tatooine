@@ -1,4 +1,4 @@
-#include "../include/Model3D.hpp"
+#include "Model3D.hpp"
 
 namespace gps {
 

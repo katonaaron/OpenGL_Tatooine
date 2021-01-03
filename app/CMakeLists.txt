@@ -51,7 +51,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
 
 
 
-# Shaders and models
+# Shaders, models, textures
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
@@ -64,5 +64,11 @@ add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/models $<TARGET_FILE_DIR:${PROJECT_NAME}>/models
+        COMMENT "Creating symlink to model directory" VERBATIM
+)
+add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ${CMAKE_SOURCE_DIR}/textures $<TARGET_FILE_DIR:${PROJECT_NAME}>/textures
         COMMENT "Creating symlink to model directory" VERBATIM
 )

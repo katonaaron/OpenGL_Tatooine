@@ -1,4 +1,4 @@
-#include "../include/Shader.hpp"
+#include "Shader.hpp"
 
 namespace gps {
     std::string Shader::readShaderFile(std::string fileName)
