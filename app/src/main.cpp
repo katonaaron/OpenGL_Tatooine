@@ -11,6 +11,7 @@
 #include "Shader.hpp"
 #include "Camera.hpp"
 #include "Model3D.hpp"
+#include "SkyBox.hpp"
 
 #include <iostream>
 
@@ -51,6 +52,10 @@ GLfloat angle;
 
 // shaders
 gps::Shader myBasicShader;
+gps::Shader skyboxShader;
+
+// skybox
+gps::SkyBox mySkyBox;
 
 GLenum glCheckError_(const char *file, int line)
 {
@@ -273,6 +278,35 @@ void initUniforms() {
     glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
 }
 
+void initSkyBox() {
+    std::vector<const GLchar*> faces;
+    faces.push_back("textures/skybox/right.tga");
+    faces.push_back("textures/skybox/left.tga");
+    faces.push_back("textures/skybox/top.tga");
+    faces.push_back("textures/skybox/bottom.tga");
+    faces.push_back("textures/skybox/back.tga");
+    faces.push_back("textures/skybox/front.tga");
+
+    mySkyBox.Load(faces);
+
+    skyboxShader.loadShader("shaders/skyboxShader.vert", "shaders/skyboxShader.frag");
+    skyboxShader.useShaderProgram();
+
+    // get view matrix for current camera
+    view = myCamera.getViewMatrix();
+    viewLoc = glGetUniformLocation(myBasicShader.shaderProgram, "view");
+    // send view matrix to shader
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+    // create projection matrix
+    projection = glm::perspective(glm::radians(45.0f),
+                                  (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
+                                  0.1f, 100.0f);
+    projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
+    // send projection matrix to shader
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+}
+
 void renderTeapot(gps::Shader shader) {
     // select active shader program
     shader.useShaderProgram();
@@ -295,6 +329,7 @@ void renderScene() {
     // render the teapot
     renderTeapot(myBasicShader);
 
+    mySkyBox.Draw(skyboxShader, view, projection);
 }
 
 void cleanup() {
@@ -315,6 +350,7 @@ int main(int argc, const char * argv[]) {
     initModels();
     initShaders();
     initUniforms();
+    initSkyBox();
     setWindowCallbacks();
 
     glCheckError();
