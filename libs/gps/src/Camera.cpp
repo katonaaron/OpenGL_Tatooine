@@ -19,20 +19,24 @@ namespace gps {
     }
 
     //update the camera internal parameters following a camera move event
+    //consider only the x, z coordinates in order to preserve height
     void Camera::move(MOVE_DIRECTION direction, float speed) {
+        glm::vec3 frontDir = glm::normalize(glm::vec3(cameraFrontDirection.x, 0.0f, cameraFrontDirection.z));
+        glm::vec3 rightDir = glm::normalize(glm::vec3(cameraRightDirection.x, 0.0f, cameraRightDirection.z));
+
         switch (direction) {
 
             case MOVE_FORWARD:
-                cameraPosition += cameraFrontDirection * speed;
+                cameraPosition += frontDir * speed;
                 break;
             case MOVE_BACKWARD:
-                cameraPosition -= cameraFrontDirection * speed;
+                cameraPosition -= frontDir * speed;
                 break;
             case MOVE_RIGHT:
-                cameraPosition += cameraRightDirection * speed;
+                cameraPosition += rightDir * speed;
                 break;
             case MOVE_LEFT:
-                cameraPosition -= cameraRightDirection * speed;
+                cameraPosition -= rightDir * speed;
                 break;
         }
 
@@ -40,10 +44,23 @@ namespace gps {
         cameraTarget = cameraPosition + cameraFrontDirection;
     }
 
+    float constrain(float x, float a, float b) {
+        if (x < a)
+            return a;
+        if (b < x)
+            return b;
+        return x;
+    }
+
     //update the camera internal parameters following a camera rotate event
     //yaw - camera rotation around the y axis
     //pitch - camera rotation around the x axis
     void Camera::rotate(float pitch, float yaw) {
+        // Constrain angle
+        static float angleX = 0.0f;
+        pitch = constrain(angleX + pitch, -89.9, 89.9) - angleX;
+        angleX = angleX + pitch;
+
         glm::mat4 rot(1.0f);
 
         // rotate around "y"

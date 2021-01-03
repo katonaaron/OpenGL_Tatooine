@@ -18,6 +18,7 @@ namespace gps {
         //return the view matrix, using the glm::lookAt() function
         glm::mat4 getViewMatrix();
         //update the camera internal parameters following a camera move event
+        //consider only the x, z coordinates in order to preserve height
         void move(MOVE_DIRECTION direction, float speed);
         //update the camera internal parameters following a camera rotate event
         //yaw - camera rotation around the y axis
