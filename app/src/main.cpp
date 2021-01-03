@@ -42,8 +42,6 @@ gps::Camera myCamera(
         glm::vec3(0.0f, 0.0f, -10.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
 
-GLfloat cameraSpeed = 0.1f;
-
 GLboolean pressedKeys[1024];
 
 // models
@@ -56,6 +54,11 @@ gps::Shader skyboxShader;
 
 // skybox
 gps::SkyBox mySkyBox;
+
+// constants
+float zNear = 0.1f;
+float zFar = 100.0f;
+GLfloat cameraSpeed = 0.5f;
 
 GLenum glCheckError_(const char *file, int line)
 {
@@ -101,7 +104,7 @@ void windowResizeCallback(GLFWwindow* window, int width, int height) {
     // create projection matrix
     projection = glm::perspective(glm::radians(45.0f),
                                   (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  0.1f, 20.0f);
+                                  zNear, zFar);
     projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
     // send projection matrix to shader
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -260,7 +263,7 @@ void initUniforms() {
     // create projection matrix
     projection = glm::perspective(glm::radians(45.0f),
                                   (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  0.1f, 20.0f);
+                                  zNear, zFar);
     projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
     // send projection matrix to shader
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -301,7 +304,7 @@ void initSkyBox() {
     // create projection matrix
     projection = glm::perspective(glm::radians(45.0f),
                                   (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  0.1f, 100.0f);
+                                  zNear, zFar);
     projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
     // send projection matrix to shader
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
