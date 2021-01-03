@@ -286,17 +286,18 @@ void initSkyBox() {
 
     // get view matrix for current camera
     view = myCamera.getViewMatrix();
-    viewLoc = glGetUniformLocation(myBasicShader.shaderProgram, "view");
     // send view matrix to shader
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(skyboxShader.shaderProgram, "view"), 1, GL_FALSE,
+                       glm::value_ptr(view));
 
-    // create projection matrix
-    projection = glm::perspective(glm::radians(45.0f),
+
+    glm::mat4 projectionSkyBox = glm::perspective(glm::radians(45.0f),
                                   (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  zNear, zFar);
-    projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
+                                                  0.1f, 1000.0f);
+
     // send projection matrix to shader
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(skyboxShader.shaderProgram, "projection"), 1, GL_FALSE,
+                       glm::value_ptr(projectionSkyBox));
 }
 
 void renderScene() {
