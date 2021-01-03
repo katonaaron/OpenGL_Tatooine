@@ -88,7 +88,18 @@ GLenum glCheckError_(const char *file, int line)
 
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
-    //TODO
+
+    myWindow.setWindowDimensions({width, height});
+
+    glViewport(0, 0, myWindow.getWindowDimensions().width, myWindow.getWindowDimensions().height);
+
+    // create projection matrix
+    projection = glm::perspective(glm::radians(45.0f),
+                                  (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
+                                  0.1f, 20.0f);
+    projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
+    // send projection matrix to shader
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -106,7 +117,32 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    //TODO
+    static double lastX = xpos;
+    static double lastY = ypos;
+
+    float deltaX = lastX - xpos;
+    float deltaY = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.03f;
+    deltaX *= sensitivity;
+    deltaY *= sensitivity;
+
+    float yaw = deltaX;
+    float pitch = deltaY;
+
+    if (yaw > 89.0f)
+        yaw = 89.0f;
+    if (yaw < -89.0f)
+        yaw = -89.0f;
+
+    myCamera.rotate(pitch, yaw);
+
+    //update view matrix
+    view = myCamera.getViewMatrix();
+    myBasicShader.useShaderProgram();
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 }
 
 void processMovement() {
@@ -186,6 +222,7 @@ void initOpenGLState() {
     glEnable(GL_CULL_FACE); // cull face
     glCullFace(GL_BACK); // cull back face
     glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
+    glfwSetInputMode(myWindow.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void initModels() {
