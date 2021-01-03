@@ -13,26 +13,24 @@
 #include "Model3D.hpp"
 #include "SkyBox.hpp"
 
+#include "Model.hpp"
+
 #include <iostream>
 
 // window
 gps::Window myWindow;
 
 // matrices
-glm::mat4 model;
 glm::mat4 view;
 glm::mat4 projection;
-glm::mat3 normalMatrix;
 
 // light parameters
 glm::vec3 lightDir;
 glm::vec3 lightColor;
 
 // shader uniform locations
-GLuint modelLoc;
 GLuint viewLoc;
 GLuint projectionLoc;
-GLuint normalMatrixLoc;
 GLuint lightDirLoc;
 GLuint lightColorLoc;
 
@@ -45,7 +43,7 @@ gps::Camera myCamera(
 GLboolean pressedKeys[1024];
 
 // models
-gps::Model3D teapot;
+Model baseScene;
 GLfloat angle;
 
 // shaders
@@ -160,8 +158,8 @@ void processMovement() {
         view = myCamera.getViewMatrix();
         myBasicShader.useShaderProgram();
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // compute normal matrix
+        baseScene.updateNormalMatrix(view);
     }
 
     if (pressedKeys[GLFW_KEY_S]) {
@@ -170,8 +168,8 @@ void processMovement() {
         view = myCamera.getViewMatrix();
         myBasicShader.useShaderProgram();
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // compute normal matrix
+        baseScene.updateNormalMatrix(view);
     }
 
     if (pressedKeys[GLFW_KEY_A]) {
@@ -180,8 +178,8 @@ void processMovement() {
         view = myCamera.getViewMatrix();
         myBasicShader.useShaderProgram();
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // compute normal matrix
+        baseScene.updateNormalMatrix(view);
     }
 
     if (pressedKeys[GLFW_KEY_D]) {
@@ -190,24 +188,22 @@ void processMovement() {
         view = myCamera.getViewMatrix();
         myBasicShader.useShaderProgram();
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // compute normal matrix
+        baseScene.updateNormalMatrix(view);
     }
 
     if (pressedKeys[GLFW_KEY_Q]) {
         angle -= 1.0f;
-        // update model matrix for teapot
-        model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
-        // update normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // update model matrix for
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
+        baseScene.updateModelMatrix(model, view);
     }
 
     if (pressedKeys[GLFW_KEY_E]) {
         angle += 1.0f;
-        // update model matrix for teapot
-        model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
-        // update normal matrix for teapot
-        normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
+        // update model matrix for base scene
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
+        baseScene.updateModelMatrix(model, view);
     }
 }
 
@@ -233,10 +229,6 @@ void initOpenGLState() {
     glfwSetInputMode(myWindow.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-void initModels() {
-    teapot.LoadModel("models/teapot/teapot20segUT.obj");
-}
-
 void initShaders() {
     myBasicShader.loadShader(
             "shaders/basic.vert",
@@ -246,19 +238,11 @@ void initShaders() {
 void initUniforms() {
     myBasicShader.useShaderProgram();
 
-    // create model matrix for teapot
-    model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelLoc = glGetUniformLocation(myBasicShader.shaderProgram, "model");
-
     // get view matrix for current camera
     view = myCamera.getViewMatrix();
     viewLoc = glGetUniformLocation(myBasicShader.shaderProgram, "view");
     // send view matrix to shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-    // compute normal matrix for teapot
-    normalMatrix = glm::mat3(glm::inverseTranspose(view*model));
-    normalMatrixLoc = glGetUniformLocation(myBasicShader.shaderProgram, "normalMatrix");
 
     // create projection matrix
     projection = glm::perspective(glm::radians(45.0f),
@@ -279,6 +263,11 @@ void initUniforms() {
     lightColorLoc = glGetUniformLocation(myBasicShader.shaderProgram, "lightColor");
     // send light color to shader
     glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
+}
+
+void initModels() {
+    baseScene.LoadModel("models/scene/scene.obj");
+    baseScene.init(myBasicShader, glm::mat4(1.0f), view);
 }
 
 void initSkyBox() {
@@ -310,27 +299,13 @@ void initSkyBox() {
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
-void renderTeapot(gps::Shader shader) {
-    // select active shader program
-    shader.useShaderProgram();
-
-    //send teapot model matrix data to shader
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    //send teapot normal matrix data to shader
-    glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-
-    // draw teapot
-    teapot.Draw(shader);
-}
-
 void renderScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //render the scene
 
-    // render the teapot
-    renderTeapot(myBasicShader);
+    // draw base scene
+    baseScene.Draw(myBasicShader);
 
     mySkyBox.Draw(skyboxShader, view, projection);
 }
@@ -350,9 +325,9 @@ int main(int argc, const char * argv[]) {
     }
 
     initOpenGLState();
-    initModels();
     initShaders();
     initUniforms();
+    initModels();
     initSkyBox();
     setWindowCallbacks();
 

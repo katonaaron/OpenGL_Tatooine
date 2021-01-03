@@ -4,7 +4,7 @@
 #include "Mesh.hpp"
 
 #include "tiny_obj_loader.h"
-#include "../../stb_image/include/stb_image.h"
+#include "stb_image.h"
 
 #include <iostream>
 #include <string>
@@ -22,7 +22,7 @@ namespace gps {
 
 		void LoadModel(std::string fileName, std::string basePath);
 
-		void Draw(gps::Shader shaderProgram);
+        virtual void Draw(gps::Shader shaderProgram);
 
     private:
 		// Component meshes - group of objects
