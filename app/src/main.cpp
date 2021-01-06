@@ -14,6 +14,7 @@
 #include "SkyBox.hpp"
 
 #include "Model.hpp"
+#include "view_mode.hpp"
 
 #include <iostream>
 
@@ -39,6 +40,9 @@ gps::Camera myCamera(
         glm::vec3(0.0f, 0.0f, 1.0f),
         glm::vec3(0.0f, 0.0f, -10.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
+
+ViewMode viewMode = ViewMode::SOLID_SMOOTH;
+
 
 GLboolean pressedKeys[1024];
 
@@ -205,6 +209,11 @@ void processMovement() {
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
         baseScene.updateModelMatrix(model, view);
     }
+
+    if (pressedKeys[GLFW_KEY_V]) {
+        nextViewMode(myBasicShader, viewMode);
+        pressedKeys[GLFW_KEY_V] = 0;
+    }
 }
 
 void initOpenGLWindow() {
@@ -331,6 +340,7 @@ int main(int argc, const char * argv[]) {
     initUniforms();
     initModels();
     initSkyBox();
+    setViewMode(myBasicShader, viewMode);
     setWindowCallbacks();
 
     glCheckError();
