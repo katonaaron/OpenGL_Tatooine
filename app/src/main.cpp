@@ -96,6 +96,35 @@ GLenum glCheckError_(const char *file, int line)
 }
 #define glCheckError() glCheckError_(__FILE__, __LINE__)
 
+void updateViewMatrix() {
+    //obtain view matrix
+    view = myCamera.getViewMatrix();
+
+    //send view matrix to shader
+    myBasicShader.useShaderProgram();
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+    // update the normal matrices of the objects
+    baseScene.updateNormalMatrix(view);
+}
+
+void updateProjectionMatrix() {
+    const float aspect = (float) myWindow.getWindowDimensions().width
+            / (float) myWindow.getWindowDimensions().height;
+
+    // create projection matrix
+    projection = glm::perspective(
+            glm::radians(45.0f),
+            aspect,
+            zNear,
+            zFar
+    );
+
+    // send projection matrix to shader
+    myBasicShader.useShaderProgram();
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+}
+
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
 
@@ -103,13 +132,7 @@ void windowResizeCallback(GLFWwindow* window, int width, int height) {
 
     glViewport(0, 0, myWindow.getWindowDimensions().width, myWindow.getWindowDimensions().height);
 
-    // create projection matrix
-    projection = glm::perspective(glm::radians(45.0f),
-                                  (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  zNear, zFar);
-    projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
-    // send projection matrix to shader
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    updateProjectionMatrix();
 }
 
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -148,52 +171,28 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
         yaw = -89.0f;
 
     myCamera.rotate(pitch, yaw);
-
-    //update view matrix
-    view = myCamera.getViewMatrix();
-    myBasicShader.useShaderProgram();
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    updateViewMatrix();
 }
 
 void processMovement() {
     if (pressedKeys[GLFW_KEY_W]) {
         myCamera.move(gps::MOVE_FORWARD, cameraSpeed);
-        //update view matrix
-        view = myCamera.getViewMatrix();
-        myBasicShader.useShaderProgram();
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix
-        baseScene.updateNormalMatrix(view);
+        updateViewMatrix();
     }
 
     if (pressedKeys[GLFW_KEY_S]) {
         myCamera.move(gps::MOVE_BACKWARD, cameraSpeed);
-        //update view matrix
-        view = myCamera.getViewMatrix();
-        myBasicShader.useShaderProgram();
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix
-        baseScene.updateNormalMatrix(view);
+        updateViewMatrix();
     }
 
     if (pressedKeys[GLFW_KEY_A]) {
         myCamera.move(gps::MOVE_LEFT, cameraSpeed);
-        //update view matrix
-        view = myCamera.getViewMatrix();
-        myBasicShader.useShaderProgram();
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix
-        baseScene.updateNormalMatrix(view);
+        updateViewMatrix();
     }
 
     if (pressedKeys[GLFW_KEY_D]) {
         myCamera.move(gps::MOVE_RIGHT, cameraSpeed);
-        //update view matrix
-        view = myCamera.getViewMatrix();
-        myBasicShader.useShaderProgram();
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        // compute normal matrix
-        baseScene.updateNormalMatrix(view);
+        updateViewMatrix();
     }
 
     if (pressedKeys[GLFW_KEY_Q]) {
@@ -254,13 +253,10 @@ void initUniforms() {
     // send view matrix to shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-    // create projection matrix
-    projection = glm::perspective(glm::radians(45.0f),
-                                  (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                  zNear, zFar);
+    // obtain projection matrix location
     projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
-    // send projection matrix to shader
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    // create and send projection matrix to shader
+    updateProjectionMatrix();
 
     //set the light direction (direction towards the light)
     lightDir = glm::vec3(0.0f, 1.0f, 1.0f);
