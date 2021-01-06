@@ -232,7 +232,8 @@ void initOpenGLState() {
 void initShaders() {
     myBasicShader.loadShader(
             "shaders/basic.vert",
-            "shaders/basic.frag");
+            "shaders/basic.frag",
+            "shaders/basic.geom");
 }
 
 void initUniforms() {

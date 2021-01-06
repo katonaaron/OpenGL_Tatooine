@@ -87,4 +87,62 @@ namespace gps {
         glUseProgram(this->shaderProgram);
     }
 
+    void Shader::loadShader(std::string vertexShaderFileName, std::string fragmentShaderFileName,
+                            std::string geometryShaderFileName) {
+
+        //read, parse and compile the vertex shader
+        std::string v = readShaderFile(vertexShaderFileName);
+        const GLchar* vertexShaderString = v.c_str();
+        GLuint vertexShader;
+        vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &vertexShaderString, NULL);
+        glCompileShader(vertexShader);
+        //check compilation status
+        shaderCompileLog(vertexShader);
+
+        //read, parse and compile the vertex shader
+        std::string f = readShaderFile(fragmentShaderFileName);
+        const GLchar* fragmentShaderString = f.c_str();
+        GLuint fragmentShader;
+        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &fragmentShaderString, NULL);
+        glCompileShader(fragmentShader);
+        //check compilation status
+        shaderCompileLog(fragmentShader);
+
+        //read, parse and compile the geometry shader
+        std::string g = readShaderFile(geometryShaderFileName);
+        const GLchar* geometryShaderString = g.c_str();
+        GLuint geometryShader;
+        geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometryShader, 1, &geometryShaderString, NULL);
+        glCompileShader(geometryShader);
+        //check compilation status
+        shaderCompileLog(geometryShader);
+
+        //attach and link the shader programs
+        this->shaderProgram = glCreateProgram();
+        glAttachShader(this->shaderProgram, vertexShader);
+        glAttachShader(this->shaderProgram, fragmentShader);
+        glAttachShader(this->shaderProgram, geometryShader);
+        glLinkProgram(this->shaderProgram);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteShader(geometryShader);
+        //check linking info
+        shaderLinkLog(this->shaderProgram);
+    }
+
+    void Shader::setBool(const std::string &name, bool value) const {
+        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), (int)value);
+    }
+
+    void Shader::setInt(const std::string &name, int value) const {
+        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
+    }
+
+    void Shader::setFloat(const std::string &name, float value) const {
+        glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
+    }
+
 }
