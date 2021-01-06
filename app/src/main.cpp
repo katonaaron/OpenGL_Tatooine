@@ -37,8 +37,8 @@ GLuint lightColorLoc;
 
 // camera
 gps::Camera myCamera(
-        glm::vec3(0.0f, 0.0f, 1.0f),
-        glm::vec3(0.0f, 0.0f, -10.0f),
+        glm::vec3(0.0f, 3.0f, 0.0f),
+        glm::vec3(0.0f, 3.0f, -10.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
 
 ViewMode viewMode = ViewMode::SOLID_SMOOTH;
@@ -59,7 +59,7 @@ gps::SkyBox mySkyBox;
 
 // constants
 float zNear = 0.1f;
-float zFar = 100.0f;
+float zFar = 500.0f;
 GLfloat cameraSpeed = 0.5f;
 
 GLenum glCheckError_(const char *file, int line)
