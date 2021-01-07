@@ -17,6 +17,7 @@
 #include "view_mode.hpp"
 
 #include <iostream>
+#include <memory>
 
 // window
 gps::Window myWindow;
@@ -48,6 +49,9 @@ GLboolean pressedKeys[1024];
 
 // models
 Model baseScene;
+Model babyYoda;
+Model ship;
+std::vector<std::shared_ptr<Model>> models;
 GLfloat angle;
 
 // shaders
@@ -105,7 +109,9 @@ void updateViewMatrix() {
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
     // update the normal matrices of the objects
-    baseScene.updateNormalMatrix(view);
+    for(const std::shared_ptr<Model>& model : models ) {
+        model->updateNormalMatrix(view);
+    }
 }
 
 void updateProjectionMatrix() {
@@ -274,6 +280,14 @@ void initUniforms() {
 void initModels() {
     baseScene.LoadModel("models/scene/scene.obj");
     baseScene.init(myBasicShader, glm::mat4(1.0f), view);
+    babyYoda.LoadModel("models/baby_yoda/baby_yoda.obj");
+    babyYoda.init(myBasicShader, glm::mat4(1.0f), view);
+    ship.LoadModel("models/ship/ship.obj");
+    ship.init(myBasicShader, glm::mat4(1.0f), view);
+
+    models.push_back(std::make_shared<Model>(baseScene));
+    models.push_back(std::make_shared<Model>(babyYoda));
+    models.push_back(std::make_shared<Model>(ship));
 }
 
 void initSkyBox() {
@@ -312,7 +326,9 @@ void renderScene() {
     //render the scene
 
     // draw base scene
-    baseScene.Draw(myBasicShader);
+    for(const std::shared_ptr<Model>& model : models ) {
+        model->Draw(myBasicShader);
+    }
 
     mySkyBox.Draw(skyboxShader, view, projection);
 }

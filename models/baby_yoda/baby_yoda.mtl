@@ -1,0 +1,74 @@
+# Blender MTL File: 'scene.blend'
+# Material Count: 6
+
+newmtl baby_yoda_collar
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_collar_d.png
+map_Ks baby_yoda_collar_s.png
+
+newmtl baby_yoda_eyes
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_eyes_d.png
+map_Ks baby_yoda_eyes_s.png
+
+newmtl baby_yoda_ground
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_ground_d.jpg
+map_Ks baby_yoda_ground_s.jpg
+
+newmtl baby_yoda_jacket
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_jacket_d.png
+map_Ks baby_yoda_jacket_s.png
+
+newmtl baby_yoda_rock
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_rock_d.jpg
+map_Ks baby_yoda_rock_s.jpg
+
+newmtl baby_yoda_skin
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd baby_yoda_skin_d.png
+map_Ks baby_yoda_skin_s.png

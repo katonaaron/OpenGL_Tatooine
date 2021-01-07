@@ -10,7 +10,7 @@
 *.slo
 *.lo
 *.o
-*.obj
+#*.obj
 
 # Precompiled Headers
 *.gch
@@ -165,3 +165,5 @@ CMakeUserPresets.json
 .nfs*
 
 # End of https://www.toptal.com/developers/gitignore/api/clion+all,linux,cmake,c++
+
+!models/
