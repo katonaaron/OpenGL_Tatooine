@@ -15,6 +15,7 @@
 
 #include "Model.hpp"
 #include "view_mode.hpp"
+#include "Sun.hpp"
 
 #include <iostream>
 #include <memory>
@@ -26,13 +27,16 @@ gps::Window myWindow;
 glm::mat4 view;
 glm::mat4 projection;
 
-// light parameters
+// sun
+Sun sun;
+glm::vec3 sunRotateAxis(1.0f, 1.0f, 1.0f);
+GLfloat sunRadius = 300.0f;
+GLfloat sunAngle = 180.0f;
+GLfloat sunScale= 5.0f;
 glm::vec3 lightDir;
 glm::vec3 lightColor;
 
 // shader uniform locations
-GLuint viewLoc;
-GLuint projectionLoc;
 GLuint lightDirLoc;
 GLuint lightColorLoc;
 
@@ -52,7 +56,6 @@ Model baseScene;
 Model babyYoda;
 Model ship;
 std::vector<std::shared_ptr<Model>> models;
-GLfloat angle;
 
 // shaders
 gps::Shader myBasicShader;
@@ -210,17 +213,17 @@ void processMovement() {
     }
 
     if (pressedKeys[GLFW_KEY_Q]) {
-        angle -= 1.0f;
-        // update model matrix for
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
-        baseScene.updateModelMatrix(model, view);
+        if(pressedKeys[GLFW_KEY_LEFT_CONTROL])
+            sun.scale(-1.0f);
+        else
+            sun.rotate(-1.0f);
     }
 
     if (pressedKeys[GLFW_KEY_E]) {
-        angle += 1.0f;
-        // update model matrix for base scene
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0, 1, 0));
-        baseScene.updateModelMatrix(model, view);
+        if(pressedKeys[GLFW_KEY_LEFT_CONTROL])
+            sun.scale(1.0f);
+        else
+            sun.rotate(1.0f);
     }
 
     if (pressedKeys[GLFW_KEY_V]) {
@@ -285,6 +288,11 @@ void initUniforms() {
     glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
 }
 
+void initLights() {
+    sun.LoadModel("models/sun/sun.obj");
+    sun.init(sunRotateAxis, sunRadius, sunScale, sunAngle);
+}
+
 void initModels() {
     baseScene.LoadModel("models/scene/scene.obj");
     baseScene.init(myBasicShader, glm::mat4(1.0f), view);
@@ -320,6 +328,10 @@ void renderScene() {
         model->Draw(myBasicShader);
     }
 
+    // draw sun
+    sun.Draw(simpleShader);
+
+    // draw skybox
     mySkyBox.Draw(skyboxShader, view, projection);
 }
 
