@@ -133,16 +133,44 @@ namespace gps {
         shaderLinkLog(this->shaderProgram);
     }
 
-    void Shader::setBool(const std::string &name, bool value) const {
-        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), (int)value);
+    void Shader::setUniform(const std::string &name, bool value) {
+        glUniform1i(getUniformLocation(name), (int)value);
     }
 
-    void Shader::setInt(const std::string &name, int value) const {
-        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
+    void Shader::setUniform(const std::string &name, int value) {
+        glUniform1i(getUniformLocation(name), value);
     }
 
-    void Shader::setFloat(const std::string &name, float value) const {
-        glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
+    void Shader::setUniform(const std::string &name, float value) {
+        glUniform1f(getUniformLocation(name), value);
+    }
+
+    void Shader::setUniform(const std::string &name, const glm::vec3 &value) {
+        glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(value));
+    }
+
+    void Shader::setUniform(const std::string &name, const glm::vec4 &value) {
+        glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(value));
+    }
+
+    void Shader::setUniform(const std::string &name, const glm::mat3 &value) {
+        glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
+    }
+
+    void Shader::setUniform(const std::string &name, const glm::mat4 &value) {
+        glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
+    }
+
+    GLuint Shader::getUniformLocation(const std::string &name) {
+        std::unordered_map<std::string, GLuint>::const_iterator uniform = uniformLocations.find(name);
+
+        if(uniform == uniformLocations.end()) {
+            const GLuint uniformLoc = glGetUniformLocation(shaderProgram, name.c_str());
+            uniformLocations[name] = uniformLoc;
+            return uniformLoc;
+        } else {
+            return uniform->second;
+        }
     }
 
 }

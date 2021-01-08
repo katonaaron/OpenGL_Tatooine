@@ -57,6 +57,8 @@ GLfloat angle;
 // shaders
 gps::Shader myBasicShader;
 gps::Shader skyboxShader;
+gps::Shader simpleShader;
+std::vector<std::shared_ptr<gps::Shader>> shaders;
 
 // skybox
 gps::SkyBox mySkyBox;
@@ -100,17 +102,21 @@ GLenum glCheckError_(const char *file, int line)
 }
 #define glCheckError() glCheckError_(__FILE__, __LINE__)
 
-void updateViewMatrix() {
+void updateViewMatrix(bool updateNormals = true) {
     //obtain view matrix
     view = myCamera.getViewMatrix();
 
-    //send view matrix to shader
-    myBasicShader.useShaderProgram();
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    //send view matrix to shaders
+    for (const std::shared_ptr<gps::Shader> &shader : shaders) {
+        shader->useShaderProgram();
+        shader->setUniform("view", view);
+    }
 
-    // update the normal matrices of the objects
-    for(const std::shared_ptr<Model>& model : models ) {
-        model->updateNormalMatrix(view);
+    if (updateNormals) {
+        // update the normal matrices of the models
+        for (const std::shared_ptr<Model> &model : models) {
+            model->updateNormalMatrix(view);
+        }
     }
 }
 
@@ -126,9 +132,11 @@ void updateProjectionMatrix() {
             zFar
     );
 
-    // send projection matrix to shader
-    myBasicShader.useShaderProgram();
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    //send projection matrix to shaders
+    for (const std::shared_ptr<gps::Shader> &shader : shaders) {
+        shader->useShaderProgram();
+        shader->setUniform("projection", projection);
+    }
 }
 
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
@@ -248,21 +256,21 @@ void initShaders() {
             "shaders/basic.vert",
             "shaders/basic.frag",
             "shaders/basic.geom");
+    simpleShader.loadShader("shaders/simpleTex.vert",
+                            "shaders/simpleTex.frag");
+
+    shaders.push_back(std::make_shared<gps::Shader>(myBasicShader));
+    shaders.push_back(std::make_shared<gps::Shader>(simpleShader));
+
+    updateViewMatrix(false);
+    updateProjectionMatrix();
+
+    skyboxShader.loadShader("shaders/skyboxShader.vert",
+                            "shaders/skyboxShader.frag");
 }
 
 void initUniforms() {
     myBasicShader.useShaderProgram();
-
-    // get view matrix for current camera
-    view = myCamera.getViewMatrix();
-    viewLoc = glGetUniformLocation(myBasicShader.shaderProgram, "view");
-    // send view matrix to shader
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-    // obtain projection matrix location
-    projectionLoc = glGetUniformLocation(myBasicShader.shaderProgram, "projection");
-    // create and send projection matrix to shader
-    updateProjectionMatrix();
 
     //set the light direction (direction towards the light)
     lightDir = glm::vec3(0.0f, 1.0f, 1.0f);
@@ -300,24 +308,6 @@ void initSkyBox() {
     faces.push_back("textures/skybox/front.tga");
 
     mySkyBox.Load(faces);
-
-    skyboxShader.loadShader("shaders/skyboxShader.vert", "shaders/skyboxShader.frag");
-    skyboxShader.useShaderProgram();
-
-    // get view matrix for current camera
-    view = myCamera.getViewMatrix();
-    // send view matrix to shader
-    glUniformMatrix4fv(glGetUniformLocation(skyboxShader.shaderProgram, "view"), 1, GL_FALSE,
-                       glm::value_ptr(view));
-
-
-    glm::mat4 projectionSkyBox = glm::perspective(glm::radians(45.0f),
-                                  (float)myWindow.getWindowDimensions().width / (float)myWindow.getWindowDimensions().height,
-                                                  0.1f, 1000.0f);
-
-    // send projection matrix to shader
-    glUniformMatrix4fv(glGetUniformLocation(skyboxShader.shaderProgram, "projection"), 1, GL_FALSE,
-                       glm::value_ptr(projectionSkyBox));
 }
 
 void renderScene() {

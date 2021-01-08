@@ -13,12 +13,12 @@ void setViewMode(gps::Shader shader, ViewMode viewMode) {
         case ViewMode::SOLID_SMOOTH:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             shader.useShaderProgram();
-            shader.setBool(UNIFORM_POLYGONAL_VIEW, false);
+            shader.setUniform(UNIFORM_POLYGONAL_VIEW, false);
             break;
         case ViewMode::SOLID_POLYGONAL:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             shader.useShaderProgram();
-            shader.setBool(UNIFORM_POLYGONAL_VIEW, true);
+            shader.setUniform(UNIFORM_POLYGONAL_VIEW, true);
             break;
     }
 
