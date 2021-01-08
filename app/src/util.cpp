@@ -19,8 +19,24 @@ void print(const glm::vec3& vec) {
     std::cout << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 }
 
+void print(const glm::mat4& mat) {
+    for(int i = 0; i< 4; i++) {
+        std::cout << "(\n";
+        for(int j = 0; j < 4; j++) {
+            if(j > 0)
+                std::cout << ", ";
+            std::cout << mat[i][j];
+        }
+    }
+}
+
 void println(const glm::vec3& vec) {
     print(vec);
+    std::cout << "\n";
+}
+
+void println(const glm::mat4& mat) {
+    print(mat);
     std::cout << "\n";
 }
 

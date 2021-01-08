@@ -11,7 +11,11 @@ glm::vec3 getPerpendicularTo(const glm::vec3 &vec);
 
 void print(const glm::vec3& vec);
 
+void print(const glm::mat4& mat);
+
 void println(const glm::vec3& vec);
+
+void println(const glm::mat4& mat);
 
 float constrain(float x, float a, float b);
 

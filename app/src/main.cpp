@@ -19,7 +19,6 @@
 #include "lights.hpp"
 
 #include <iostream>
-#include <memory>
 
 // window
 gps::Window myWindow;
@@ -69,14 +68,14 @@ GLboolean pressedKeys[1024];
 Model baseScene;
 Model babyYoda;
 Model ship;
-std::vector<std::shared_ptr<Model>> models;
+std::vector<Model*> models;
 
 // shaders
 gps::Shader myBasicShader;
 gps::Shader skyboxShader;
 gps::Shader simpleShader;
-std::vector<std::shared_ptr<gps::Shader>> shaders;
-std::vector<std::shared_ptr<gps::Shader>> lightingShaders;
+std::vector<gps::Shader*> shaders;
+std::vector<gps::Shader*> lightingShaders;
 
 // skybox
 gps::SkyBox skyBoxDay;
@@ -126,14 +125,14 @@ void updateViewMatrix(bool updateNormals = true) {
     view = myCamera.getViewMatrix();
 
     //send view matrix to shaders
-    for (const std::shared_ptr<gps::Shader> &shader : shaders) {
+    for (const auto &shader : shaders) {
         shader->useShaderProgram();
         shader->setUniform("view", view);
     }
 
     if (updateNormals) {
         // update the normal matrices of the models
-        for (const std::shared_ptr<Model> &model : models) {
+        for (const auto &model : models) {
             model->updateNormalMatrix(view);
         }
     }
@@ -152,7 +151,7 @@ void updateProjectionMatrix() {
     );
 
     //send projection matrix to shaders
-    for (const std::shared_ptr<gps::Shader> &shader : shaders) {
+    for (const auto &shader : shaders) {
         shader->useShaderProgram();
         shader->setUniform("projection", projection);
     }
@@ -305,15 +304,15 @@ void initShaders() {
                             "shaders/skyboxShader.frag");
 
     // Add shaders to the list of shaders that require view and projection matrices
-    shaders.push_back(std::make_shared<gps::Shader>(myBasicShader));
-    shaders.push_back(std::make_shared<gps::Shader>(simpleShader));
+    shaders.push_back(&myBasicShader);
+    shaders.push_back(&simpleShader);
 
     // Update the view and projection matrices of the dependent shaders
     updateViewMatrix(false);
     updateProjectionMatrix();
 
     // Add shaders to the list of shaders that require data of lights (directional or positional)
-    lightingShaders.push_back(std::make_shared<gps::Shader>(myBasicShader));
+    lightingShaders.push_back(&myBasicShader);
 }
 
 void initLights() {
@@ -324,15 +323,15 @@ void initLights() {
 
 void initModels() {
     baseScene.LoadModel("models/scene/scene.obj");
-    baseScene.init(myBasicShader, glm::mat4(1.0f), view);
+    baseScene.init(glm::mat4(1.0f), view);
     babyYoda.LoadModel("models/baby_yoda/baby_yoda.obj");
-    babyYoda.init(myBasicShader, glm::mat4(1.0f), view);
+    babyYoda.init(glm::mat4(1.0f), view);
     ship.LoadModel("models/ship/ship.obj");
-    ship.init(myBasicShader, glm::mat4(1.0f), view);
+    ship.init(glm::mat4(1.0f), view);
 
-    models.push_back(std::make_shared<Model>(baseScene));
-    models.push_back(std::make_shared<Model>(babyYoda));
-    models.push_back(std::make_shared<Model>(ship));
+    models.push_back(&baseScene);
+    models.push_back(&babyYoda);
+    models.push_back(&ship);
 }
 
 void initSkyBox() {
@@ -357,15 +356,28 @@ void initSkyBox() {
     skyBoxNight.Load(nightFaces);
 }
 
+void drawObjects(gps::Shader shader, bool depthPass) {
+    shader.useShaderProgram();
+    glCheckError();
+    for(const auto& model : models ) {
+        shader.setUniform("model", model->getModelMatrix());glCheckError();
+
+        if(model == &babyYoda)
+            println(model->getModelMatrix());
+        glCheckError();
+        // do not send the normal matrix if we are rendering in the depth map
+        if(!depthPass)
+            shader.setUniform("normalMatrix", model->getNormalMatrix());
+        glCheckError();
+        model->Draw(shader);glCheckError();
+    }
+}
+
 void renderScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //render the scene
-
-    // draw base scene
-    for(const std::shared_ptr<Model>& model : models ) {
-        model->Draw(myBasicShader);
-    }
+    drawObjects(myBasicShader, false);
 
     // draw sun
     sun.Draw(simpleShader);

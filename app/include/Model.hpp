@@ -13,24 +13,19 @@
 class Model : public gps::Model3D {
 public:
 
-    void updateModelMatrix(const glm::mat4& model, const glm::mat4& view);
+    void setModelMatrix(const glm::mat4& model);
     void updateNormalMatrix(const glm::mat4& view);
     const glm::mat4& getModelMatrix();
     const glm::mat3& getNormalMatrix();
 
-    void init(gps::Shader& shaderProgram, const glm::mat4& model, const glm::mat4& view);
-    void Draw(gps::Shader shaderProgram) override;
+    void init(const glm::mat4& model, const glm::mat4& view);
+    void init(const glm::mat4& model);
 
 private:
     // matrices
     glm::mat4 modelMatrix;
     glm::mat3 normalMatrix;
-
-    // shader uniform locations
-    GLuint modelLoc;
-    GLuint normalMatrixLoc;
-
-    void sendMatrices(gps::Shader& shaderProgram);
+    glm::mat3 viewMatrix;
 };
 
 
