@@ -16,6 +16,7 @@
 #include "Model.hpp"
 #include "view_mode.hpp"
 #include "Sun.hpp"
+#include "lights.hpp"
 
 #include <iostream>
 #include <memory>
@@ -33,8 +34,12 @@ glm::vec3 sunRotateAxis(1.0f, 1.0f, 1.0f);
 GLfloat sunRadius = 300.0f;
 GLfloat sunAngle = 180.0f;
 GLfloat sunScale= 5.0f;
-glm::vec3 lightDir;
-glm::vec3 lightColor;
+DirLight sunLight = {
+        .direction = glm::vec3(),
+        .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
+        .diffuse =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
+        .specular =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
+};
 
 // shader uniform locations
 GLuint lightDirLoc;
@@ -62,6 +67,7 @@ gps::Shader myBasicShader;
 gps::Shader skyboxShader;
 gps::Shader simpleShader;
 std::vector<std::shared_ptr<gps::Shader>> shaders;
+std::vector<std::shared_ptr<gps::Shader>> lightingShaders;
 
 // skybox
 gps::SkyBox mySkyBox;
@@ -142,6 +148,15 @@ void updateProjectionMatrix() {
     }
 }
 
+void updateSunlight() {
+    sunLight.direction = sun.getPosition(); // -(0, 0, 0). The vector from the origin to the center of the object.
+
+    // send the directional sunlight data to the shaders which depend on it
+    for(const auto& shader : lightingShaders) {
+        sendDirLight(sunLight, *shader);
+    }
+}
+
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
 
@@ -213,17 +228,21 @@ void processMovement() {
     }
 
     if (pressedKeys[GLFW_KEY_Q]) {
-        if(pressedKeys[GLFW_KEY_LEFT_CONTROL])
+        if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(-1.0f);
-        else
+        } else {
             sun.rotate(-1.0f);
+            updateSunlight();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_E]) {
-        if(pressedKeys[GLFW_KEY_LEFT_CONTROL])
+        if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(1.0f);
-        else
+        } else {
             sun.rotate(1.0f);
+            updateSunlight();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_V]) {
@@ -261,36 +280,25 @@ void initShaders() {
             "shaders/basic.geom");
     simpleShader.loadShader("shaders/simpleTex.vert",
                             "shaders/simpleTex.frag");
+    skyboxShader.loadShader("shaders/skyboxShader.vert",
+                            "shaders/skyboxShader.frag");
 
+    // Add shaders to the list of shaders that require view and projection matrices
     shaders.push_back(std::make_shared<gps::Shader>(myBasicShader));
     shaders.push_back(std::make_shared<gps::Shader>(simpleShader));
 
+    // Update the view and projection matrices of the dependent shaders
     updateViewMatrix(false);
     updateProjectionMatrix();
 
-    skyboxShader.loadShader("shaders/skyboxShader.vert",
-                            "shaders/skyboxShader.frag");
-}
-
-void initUniforms() {
-    myBasicShader.useShaderProgram();
-
-    //set the light direction (direction towards the light)
-    lightDir = glm::vec3(0.0f, 1.0f, 1.0f);
-    lightDirLoc = glGetUniformLocation(myBasicShader.shaderProgram, "lightDir");
-    // send light dir to shader
-    glUniform3fv(lightDirLoc, 1, glm::value_ptr(lightDir));
-
-    //set light color
-    lightColor = glm::vec3(1.0f, 1.0f, 1.0f); //white light
-    lightColorLoc = glGetUniformLocation(myBasicShader.shaderProgram, "lightColor");
-    // send light color to shader
-    glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor));
+    // Add shaders to the list of shaders that require data of lights (directional or positional)
+    lightingShaders.push_back(std::make_shared<gps::Shader>(myBasicShader));
 }
 
 void initLights() {
     sun.LoadModel("models/sun/sun.obj");
     sun.init(sunRotateAxis, sunRadius, sunScale, sunAngle);
+    updateSunlight();
 }
 
 void initModels() {
