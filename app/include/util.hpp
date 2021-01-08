@@ -15,4 +15,8 @@ void println(const glm::vec3& vec);
 
 float constrain(float x, float a, float b);
 
+// vec1, vec2 must be normalized
+// result in degrees
+float angleBetween(const glm::vec3& vec1, const glm::vec3& vec2);
+
 #endif //TATOOINE_UTIL_HPP

@@ -40,6 +40,15 @@ DirLight sunLight = {
         .diffuse =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
         .specular =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
 };
+DirLight nightLight = {
+        .direction = glm::vec3(),
+        .ambient =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
+        .diffuse =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
+        .specular =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
+};
+
+// Day or Night
+bool isDay = true;
 
 // shader uniform locations
 GLuint lightDirLoc;
@@ -70,7 +79,8 @@ std::vector<std::shared_ptr<gps::Shader>> shaders;
 std::vector<std::shared_ptr<gps::Shader>> lightingShaders;
 
 // skybox
-gps::SkyBox mySkyBox;
+gps::SkyBox skyBoxDay;
+gps::SkyBox skyBoxNight;
 
 // constants
 float zNear = 0.1f;
@@ -149,12 +159,25 @@ void updateProjectionMatrix() {
 }
 
 void updateSunlight() {
-    sunLight.direction = sun.getPosition(); // -(0, 0, 0). The vector from the origin to the center of the object.
+    static const glm::vec3 axisY = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    sunLight.direction = glm::normalize(sun.getPosition()); // -(0, 0, 0). The vector from the origin to the center of the object.
+
+    isDay = angleBetween(axisY, sunLight.direction) < 80.0f;
 
     // send the directional sunlight data to the shaders which depend on it
     for(const auto& shader : lightingShaders) {
-        sendDirLight(sunLight, *shader);
+        if(angleBetween(axisY, sunLight.direction) < 90.0f) {
+            sendDirLight(sunLight, *shader);
+        } else {
+            sendDirLight(nightLight, *shader);
+        }
     }
+}
+
+void rotateSun(float angle) {
+    sun.rotate(angle);
+    updateSunlight();
 }
 
 void windowResizeCallback(GLFWwindow* window, int width, int height) {
@@ -231,8 +254,7 @@ void processMovement() {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(-1.0f);
         } else {
-            sun.rotate(-1.0f);
-            updateSunlight();
+            rotateSun(-1.0f);
         }
     }
 
@@ -240,8 +262,7 @@ void processMovement() {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(1.0f);
         } else {
-            sun.rotate(1.0f);
-            updateSunlight();
+            rotateSun(1.0f);
         }
     }
 
@@ -315,15 +336,25 @@ void initModels() {
 }
 
 void initSkyBox() {
-    std::vector<const GLchar*> faces;
-    faces.push_back("textures/skybox/right.tga");
-    faces.push_back("textures/skybox/left.tga");
-    faces.push_back("textures/skybox/top.tga");
-    faces.push_back("textures/skybox/bottom.tga");
-    faces.push_back("textures/skybox/back.tga");
-    faces.push_back("textures/skybox/front.tga");
+    std::vector<const GLchar*> dayFaces;
+    dayFaces.push_back("textures/skybox-day/right.tga");
+    dayFaces.push_back("textures/skybox-day/left.tga");
+    dayFaces.push_back("textures/skybox-day/top.tga");
+    dayFaces.push_back("textures/skybox-day/bottom.tga");
+    dayFaces.push_back("textures/skybox-day/back.tga");
+    dayFaces.push_back("textures/skybox-day/front.tga");
 
-    mySkyBox.Load(faces);
+    skyBoxDay.Load(dayFaces);
+
+    std::vector<const GLchar*> nightFaces;
+    nightFaces.push_back("textures/skybox-night/right.png");
+    nightFaces.push_back("textures/skybox-night/left.png");
+    nightFaces.push_back("textures/skybox-night/top.png");
+    nightFaces.push_back("textures/skybox-night/bottom.png");
+    nightFaces.push_back("textures/skybox-night/back.png");
+    nightFaces.push_back("textures/skybox-night/front.png");
+
+    skyBoxNight.Load(nightFaces);
 }
 
 void renderScene() {
@@ -340,7 +371,10 @@ void renderScene() {
     sun.Draw(simpleShader);
 
     // draw skybox
-    mySkyBox.Draw(skyboxShader, view, projection);
+    if(isDay)
+        skyBoxDay.Draw(skyboxShader, view, projection);
+    else
+        skyBoxNight.Draw(skyboxShader, view, projection);
 }
 
 void cleanup() {

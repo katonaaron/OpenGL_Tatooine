@@ -31,3 +31,7 @@ float constrain(float x, float a, float b) {
         return b;
     return x;
 }
+
+float angleBetween(const glm::vec3 &vec1, const glm::vec3 &vec2) {
+    return glm::degrees(glm::acos(glm::dot(vec1, vec2)));
+}
