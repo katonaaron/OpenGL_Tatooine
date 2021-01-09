@@ -30,29 +30,24 @@ float ambientStrength = 0.2f;
 float specularStrength = 0.5f;
 float shininess = 32;
 
-void computeDirLight(DirLight dirLight, out vec3 ambient, out vec3 diffuse, out vec3 specular)
+void computeDirLight(DirLight light, vec3 normal, vec3 viewDir, out vec3 ambient, out vec3 diffuse, out vec3 specular)
 {
-    //compute eye space coordinates
-    vec3 normalEye = normalize(fNormal);
+    // normalize light direction
+    vec3 lightDir = vec3(normalize(view * vec4(light.direction, 0.0f)));
 
-    //normalize light direction
-    vec3 lightDirN = vec3(normalize(view * vec4(dirLight.direction, 0.0f)));
-
-    //compute view direction (in eye coordinates, the viewer is situated at the origin
-    vec3 viewDir = normalize(- fPosEye);
-
-    //compute half vector
-    vec3 halfVector = normalize(lightDirN + viewDir);
+    // compute half vector
+    vec3 halfVector = normalize(lightDir + viewDir);
 
     //compute ambient light
-    ambient = ambientStrength * dirLight.ambient;
+    ambient = light.ambient * ambientStrength;
 
     //compute diffuse light
-    diffuse = max(dot(normalEye, lightDirN), 0.0f) * dirLight.diffuse;
+    float diffCoeff = max(dot(normal, lightDir), 0.0f);
+    diffuse = light.diffuse * diffCoeff;
 
     //compute specular light
-    float specCoeff = pow(max(dot(normalEye, halfVector), 0.0f), shininess);
-    specular = specularStrength * specCoeff * dirLight.specular;
+    float specCoeff = pow(max(dot(normal, halfVector), 0.0f), shininess);
+    specular = light.specular * specCoeff * specularStrength;
 }
 
 float computeShadow()
@@ -101,11 +96,18 @@ float computeShadow()
 
 void main()
 {
+    // compute normal vector in eye coordinates
+    vec3 normal = normalize(fNormal);
+
+    // compute view direction (in eye coordinates, the viewer is situated at the origin
+    vec3 viewDir = normalize(- fPosEye);
+
+    // color components
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 
-    computeDirLight(dirLight, ambient, diffuse, specular);
+    computeDirLight(dirLight, normal, viewDir, ambient, diffuse, specular);
 
     //modulate with shadow
     float shadow = computeShadow();
