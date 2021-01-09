@@ -41,7 +41,7 @@ DirLight sunLight = {
 };
 DirLight nightLight = {
         .direction = glm::vec3(),
-        .ambient =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
+        .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
         .diffuse =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
         .specular =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
 };
@@ -166,7 +166,7 @@ void updateSunlight() {
 
     // send the directional sunlight data to the shaders which depend on it
     for(const auto& shader : lightingShaders) {
-        if(angleBetween(axisY, sunLight.direction) < 90.0f) {
+        if(sun.getPosition().y > 0) {
             sendDirLight(sunLight, *shader);
         } else {
             sendDirLight(nightLight, *shader);
@@ -290,6 +290,7 @@ void initOpenGLState() {
     glEnable(GL_CULL_FACE); // cull face
     glCullFace(GL_BACK); // cull back face
     glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
+    // Enable mouse control
     glfwSetInputMode(myWindow.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
@@ -358,18 +359,13 @@ void initSkyBox() {
 
 void drawObjects(gps::Shader shader, bool depthPass) {
     shader.useShaderProgram();
-    glCheckError();
-    for(const auto& model : models ) {
-        shader.setUniform("model", model->getModelMatrix());glCheckError();
 
-        if(model == &babyYoda)
-            println(model->getModelMatrix());
-        glCheckError();
+    for(const auto& model : models ) {
+        shader.setUniform("model", model->getModelMatrix());
         // do not send the normal matrix if we are rendering in the depth map
         if(!depthPass)
             shader.setUniform("normalMatrix", model->getNormalMatrix());
-        glCheckError();
-        model->Draw(shader);glCheckError();
+        model->Draw(shader);
     }
 }
 
@@ -405,7 +401,7 @@ int main(int argc, const char * argv[]) {
 
     initOpenGLState();
     initShaders();
-    initUniforms();
+    initLights();
     initModels();
     initSkyBox();
     setViewMode(myBasicShader, viewMode);
