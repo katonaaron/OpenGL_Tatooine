@@ -17,11 +17,19 @@
 #include "view_mode.hpp"
 #include "Sun.hpp"
 #include "lights.hpp"
+#include "shadow.hpp"
 
 #include <iostream>
 
 // window
 gps::Window myWindow;
+
+// shadows
+const unsigned int SHADOW_WIDTH = 4 * 2048;
+const unsigned int SHADOW_HEIGHT = 4 * 2048;
+GLuint shadowMapFBO;
+GLuint depthMapTexture;
+bool showDepthMap = false;
 
 // matrices
 glm::mat4 view;
@@ -68,14 +76,21 @@ GLboolean pressedKeys[1024];
 Model baseScene;
 Model babyYoda;
 Model ship;
+gps::Model3D screenQuad;
 std::vector<Model*> models;
 
 // shaders
 gps::Shader myBasicShader;
 gps::Shader skyboxShader;
 gps::Shader simpleShader;
+gps::Shader screenQuadShader;
+gps::Shader depthMapShader;
+// Shaders that require view and projection matrices
 std::vector<gps::Shader*> shaders;
-std::vector<gps::Shader*> lightingShaders;
+// Shaders that require data of lights (directional or positional)
+std::vector<gps::Shader*> shadersLights;
+// Shaders that require the light space transformation matrix
+std::vector<gps::Shader*> shadersLightSpTrMat;
 
 // skybox
 gps::SkyBox skyBoxDay;
@@ -165,12 +180,21 @@ void updateSunlight() {
     isDay = angleBetween(axisY, sunLight.direction) < 80.0f;
 
     // send the directional sunlight data to the shaders which depend on it
-    for(const auto& shader : lightingShaders) {
+    for(const auto& shader : shadersLights) {
+        shader->useShaderProgram();
         if(sun.getPosition().y > 0) {
             sendDirLight(sunLight, *shader);
         } else {
             sendDirLight(nightLight, *shader);
         }
+    }
+
+    const glm::mat4& lightSpaceTrMat = computeLightSpaceTrMatrix(sun);
+
+    // update the light space transformation matrices in the shaders which depend on it
+    for(const auto& shader : shadersLightSpTrMat) {
+        shader->useShaderProgram();
+        shader->setUniform("lightSpaceTrMatrix", lightSpaceTrMat);
     }
 }
 
@@ -265,6 +289,11 @@ void processMovement() {
         }
     }
 
+    if (pressedKeys[GLFW_KEY_M]) {
+        showDepthMap = !showDepthMap;
+        pressedKeys[GLFW_KEY_M] = 0;
+    }
+
     if (pressedKeys[GLFW_KEY_V]) {
         nextViewMode(myBasicShader, viewMode);
         pressedKeys[GLFW_KEY_V] = 0;
@@ -303,6 +332,10 @@ void initShaders() {
                             "shaders/simpleTex.frag");
     skyboxShader.loadShader("shaders/skyboxShader.vert",
                             "shaders/skyboxShader.frag");
+    screenQuadShader.loadShader("shaders/screenQuad.vert",
+                                "shaders/screenQuad.frag");
+    depthMapShader.loadShader("shaders/depthMapShader.vert",
+                              "shaders/passThrough.frag");
 
     // Add shaders to the list of shaders that require view and projection matrices
     shaders.push_back(&myBasicShader);
@@ -313,7 +346,11 @@ void initShaders() {
     updateProjectionMatrix();
 
     // Add shaders to the list of shaders that require data of lights (directional or positional)
-    lightingShaders.push_back(&myBasicShader);
+    shadersLights.push_back(&myBasicShader);
+
+    // Add shaders to the list of shaders that require the light space transformation matrix
+    shadersLightSpTrMat.push_back(&myBasicShader);
+    shadersLightSpTrMat.push_back(&depthMapShader);
 }
 
 void initLights() {
@@ -329,6 +366,7 @@ void initModels() {
     babyYoda.init(glm::mat4(1.0f), view);
     ship.LoadModel("models/ship/ship.obj");
     ship.init(glm::mat4(1.0f), view);
+    screenQuad.LoadModel("models/quad/quad.obj");
 
     models.push_back(&baseScene);
     models.push_back(&babyYoda);
@@ -370,19 +408,63 @@ void drawObjects(gps::Shader shader, bool depthPass) {
 }
 
 void renderScene() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // depth maps creation pass
+    // Render the scene in the depth map
+    // Render the scene to the depth buffer
 
-    //render the scene
-    drawObjects(myBasicShader, false);
+    depthMapShader.useShaderProgram();
 
-    // draw sun
-    sun.Draw(simpleShader);
+    glViewport(0,0,SHADOW_WIDTH, SHADOW_HEIGHT);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
-    // draw skybox
-    if(isDay)
-        skyBoxDay.Draw(skyboxShader, view, projection);
-    else
-        skyBoxNight.Draw(skyboxShader, view, projection);
+    drawObjects(depthMapShader, true);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    // configure back the viewport
+    glViewport(0, 0, myWindow.getWindowDimensions().width, myWindow.getWindowDimensions().height);
+
+    if (showDepthMap) {
+        // render depth map on screen
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        screenQuadShader.useShaderProgram();
+
+        //bind the depth map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+        screenQuadShader.setUniform("depthMap", 0);
+
+        glDisable(GL_DEPTH_TEST);
+        screenQuad.Draw(screenQuadShader);
+        glEnable(GL_DEPTH_TEST);
+    }
+    else {
+        // final scene rendering pass (with shadows)
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //bind the shadow map
+        myBasicShader.useShaderProgram();
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+        myBasicShader.setUniform("shadowMap", 3);
+
+        //render the scene
+        drawObjects(myBasicShader, false);
+
+        // draw sun
+        sun.Draw(simpleShader);
+
+        // draw skybox
+        if (isDay)
+            skyBoxDay.Draw(skyboxShader, view, projection);
+        else
+            skyBoxNight.Draw(skyboxShader, view, projection);
+    }
 }
 
 void cleanup() {
@@ -404,6 +486,7 @@ int main(int argc, const char * argv[]) {
     initLights();
     initModels();
     initSkyBox();
+    initShadowMapFBO(SHADOW_WIDTH, SHADOW_HEIGHT, shadowMapFBO, depthMapTexture);
     setViewMode(myBasicShader, viewMode);
     setWindowCallbacks();
 

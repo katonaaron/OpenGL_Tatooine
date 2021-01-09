@@ -8,12 +8,14 @@ out VS_OUT {
 	vec3 position;
 	vec3 normal;
 	vec2 texCoords;
+	vec4 fragPosLightSpace;
 } vs_out;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
+uniform	mat4 lightSpaceTrMatrix;
 
 void main() 
 {
@@ -21,4 +23,5 @@ void main()
 	vs_out.position = vPosition;
 	vs_out.normal = normalMatrix * vNormal;
 	vs_out.texCoords = vTexCoords;
+	vs_out.fragPosLightSpace = lightSpaceTrMatrix * model * vec4(vPosition, 1.0f);
 }

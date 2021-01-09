@@ -7,11 +7,13 @@ in VS_OUT {
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    vec4 fragPosLightSpace;
 } gs_in[];
 
 out vec3 fPosition;
 out vec3 fNormal;
 out vec2 fTexCoords;
+out vec4 fragPosLightSpace;
 
 uniform mat3 normalMatrix;
 uniform bool polygonalView;
@@ -34,6 +36,7 @@ void main() {
         else
             fNormal = gs_in[i].normal;
         fTexCoords = gs_in[i].texCoords;
+        fragPosLightSpace = gs_in[i].fragPosLightSpace;
         EmitVertex();
     }
     EndPrimitive();
