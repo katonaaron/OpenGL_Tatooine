@@ -5,23 +5,31 @@ layout(location=1) in vec3 vNormal;
 layout(location=2) in vec2 vTexCoords;
 
 out VS_OUT {
-	vec3 position;
-	vec3 normal;
-	vec2 texCoords;
-	vec4 fragPosLightSpace;
+    vec3 posLocal;
+    vec3 posEye;
+    vec4 posLightSpace;
+    vec3 normal;
+    vec2 texCoords;
 } vs_out;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
-uniform	mat4 lightSpaceTrMatrix;
+uniform mat4 lightSpaceTrMatrix;
 
-void main() 
+void main()
 {
-	gl_Position = projection * view * model * vec4(vPosition, 1.0f);
-	vs_out.position = vPosition;
-	vs_out.normal = normalMatrix * vNormal;
-	vs_out.texCoords = vTexCoords;
-	vs_out.fragPosLightSpace = lightSpaceTrMatrix * model * vec4(vPosition, 1.0f);
+    vec4 posLocal = vec4(vPosition, 1.0f);
+    vec4 posWorld = model * posLocal;
+    vec4 posEye = view * posWorld;
+    vec4 posProj = projection * posEye;
+    vec4 posLightSpace = lightSpaceTrMatrix * posWorld;
+
+    gl_Position = posProj;
+    vs_out.posLocal = posLocal.xyz;
+    vs_out.posEye = posEye.xyz;
+    vs_out.posLightSpace = posLightSpace;
+    vs_out.normal = normalMatrix * vNormal;
+    vs_out.texCoords = vTexCoords;
 }

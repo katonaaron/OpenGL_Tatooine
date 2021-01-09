@@ -41,16 +41,17 @@ GLfloat sunRadius = 300.0f;
 GLfloat sunAngle = 180.0f;
 GLfloat sunScale = 5.0f;
 DirLight sunLight = {
-        .direction = glm::vec3(),
+        .direction = glm::vec3(), // calculated based on the position of the sun
         .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
         .diffuse =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
         .specular =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
 };
+// The directional light at night produces only the ambient component.
 DirLight nightLight = {
-        .direction = glm::vec3(),
+        .direction = glm::vec3(), // doesn't matter
         .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
-        .diffuse =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
-        .specular =  glm::vec3(0.0f, 0.0f, 0.0f), //white light
+        .diffuse =  glm::vec3(0.0f, 0.0f, 0.0f), //black light
+        .specular =  glm::vec3(0.0f, 0.0f, 0.0f), //black light
 };
 
 // Day or Night
@@ -174,8 +175,10 @@ void updateProjectionMatrix() {
 void updateSunlight() {
     static const glm::vec3 axisY = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    sunLight.direction = glm::normalize(
-            sun.getPosition()); // -(0, 0, 0). The vector from the origin to the center of the object.
+    // The direction of the directional light is from the fragment towards the light source
+    // The light direction is the vector from the origin to the center of the sun object.
+    // lightDir = sunPosition - (0, 0, 0)
+    sunLight.direction = glm::normalize(sun.getPosition());
 
     isDay = angleBetween(axisY, sunLight.direction) < 80.0f;
 

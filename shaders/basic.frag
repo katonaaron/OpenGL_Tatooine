@@ -1,9 +1,9 @@
 #version 410 core
 
-in vec3 fPosition;
+in vec3 fPosEye;
+in vec4 fPosLightSpace;
 in vec3 fNormal;
 in vec2 fTexCoords;
-in vec4 fragPosLightSpace;
 
 out vec4 fColor;
 
@@ -34,7 +34,6 @@ float specularStrength = 0.5f;
 void computeDirLight()
 {
     //compute eye space coordinates
-    vec4 fPosEye = view * model * vec4(fPosition, 1.0f);
     vec3 normalEye = normalize(fNormal);
 
     //normalize light direction
@@ -58,7 +57,7 @@ void computeDirLight()
 float computeShadow()
 {
     // perform perspective divide
-    vec3 normalizedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    vec3 normalizedCoords = fPosLightSpace.xyz / fPosLightSpace.w;
 
     // Transform to [0, 1] range
     normalizedCoords = normalizedCoords * 0.5 + 0.5;
@@ -86,9 +85,9 @@ float computeShadow()
     // PCF
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -1; x <= 1; ++x)
+    for (int x = -1; x <= 1; ++x)
     {
-        for(int y = -1; y <= 1; ++y)
+        for (int y = -1; y <= 1; ++y)
         {
             float pcfDepth = texture(shadowMap, normalizedCoords.xy + vec2(x, y) * texelSize).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
@@ -99,7 +98,7 @@ float computeShadow()
     return shadow;
 }
 
-void main() 
+void main()
 {
     computeDirLight();
 
