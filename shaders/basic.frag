@@ -28,7 +28,7 @@ uniform sampler2D shadowMap;
 //constants
 float ambientStrength = 0.2f;
 float specularStrength = 0.5f;
-float shininess = 32;
+float shininess = 32.0f;
 
 void computeDirLight(DirLight light, vec3 normal, vec3 viewDir, out vec3 ambient, out vec3 diffuse, out vec3 specular)
 {
@@ -50,14 +50,19 @@ void computeDirLight(DirLight light, vec3 normal, vec3 viewDir, out vec3 ambient
     specular = light.specular * specCoeff * specularStrength;
 }
 
-float computeShadow()
+float computeShadow(DirLight light, vec3 normal)
 {
+    // normalize light direction
+    vec3 lightDir = vec3(normalize(view * vec4(light.direction, 0.0f)));
+
     // perform perspective divide
     vec3 normalizedCoords = fPosLightSpace.xyz / fPosLightSpace.w;
 
     // Transform to [0, 1] range
-    normalizedCoords = normalizedCoords * 0.5 + 0.5;
+    normalizedCoords = normalizedCoords * 0.5f + 0.5f;
 
+    // if the fragment is outside of the far plane from the light's point of view
+    // do not cast shadow on it
     if (normalizedCoords.z > 1.0f)
     return 0.0f;
 
@@ -67,30 +72,11 @@ float computeShadow()
     // Get depth of the current fragment from light's perspective
     float currentDepth = normalizedCoords.z;
 
-    //transform normal
-    vec3 normalEye = normalize(fNormal);
+    // Compute bias for correcting the shadow acne
+    float bias = max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
 
-    //normalize light direction
-    vec3 lightDirN = vec3(normalize(view * vec4(dirLight.direction, 0.0f)));
-
-    // Check whether current frag pos is in shadow
-    //	float bias = 0.005f;
-    float bias = max(0.05f * (1.0f - dot(normalEye, lightDirN)), 0.005f);
-    //    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-
-    // PCF
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, normalizedCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }
-    }
-    shadow /= 9.0;
-
+    // Check whether the current fragment is in shadow
+    float shadow = currentDepth - bias > closestDepth ? 1.0f : 0.0f;
     return shadow;
 }
 
@@ -110,7 +96,7 @@ void main()
     computeDirLight(dirLight, normal, viewDir, ambient, diffuse, specular);
 
     //modulate with shadow
-    float shadow = computeShadow();
+    float shadow = computeShadow(dirLight, normal);
 
     //compute final vertex color
     vec3 color = min((ambient + (1.0f - shadow) * diffuse) * texture(diffuseTexture, fTexCoords).rgb + (1.0f - shadow) * specular * texture(specularTexture, fTexCoords).rgb, 1.0f);
