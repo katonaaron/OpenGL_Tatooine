@@ -20,6 +20,14 @@ struct DirLight {
 };
 uniform DirLight dirLight;
 
+// fog
+struct Fog {
+    vec3 position;
+    vec4 color;
+    float density;
+};
+uniform Fog fog;
+
 // textures
 uniform sampler2D diffuseTexture;
 uniform sampler2D specularTexture;
@@ -97,6 +105,12 @@ float computeShadow(DirLight light, vec3 normal)
     return shadow;
 }
 
+float computeFogFactor(Fog fog) {
+    float fragmentDistance = length(fog.position - fPosEye);
+    float fogFactor =  exp(-pow(fragmentDistance * fog.density, 2));
+    return clamp(fogFactor, 0.0f, 1.0f);
+}
+
 void main()
 {
     // compute normal vector in eye coordinates
@@ -123,8 +137,15 @@ void main()
     diffuse *= texture(diffuseTexture, fTexCoords).rgb;
     specular *= texture(specularTexture, fTexCoords).rgb;
 
-    //compute final vertex color
-    vec3 color = min(ambient + diffuse + specular, 1.0f);
+    // compute color
+    vec4 color = vec4(ambient + diffuse + specular, 1.0f);
 
-    fColor = vec4(color, 1.0f);
+    // apply fog effect
+    float fogFactor = computeFogFactor(fog);
+    color = mix(fog.color, color, fogFactor);
+
+    // staturate color at white
+    color = min(color, 1.0f);
+
+    fColor = color;
 }

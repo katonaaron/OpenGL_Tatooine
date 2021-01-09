@@ -17,6 +17,7 @@
 #include "Sun.hpp"
 #include "lights.hpp"
 #include "shadow.hpp"
+#include "fog.hpp"
 
 #include <iostream>
 
@@ -57,9 +58,15 @@ DirLight nightLight = {
 // Day or Night
 bool isDay = true;
 
-// shader uniform locations
-GLuint lightDirLoc;
-GLuint lightColorLoc;
+// Fog = Sandstorm
+Fog fog{
+        .position = glm::vec3(0.0f, 0.0f, 0.0f),
+        .color = glm::vec4(0.76f, 0.69f, 0.5f, 1.0f), // sand color
+        .density = 0.02f
+};
+const float fogMin = 0.0f;
+const float fogMax = 0.05f;
+const float fogDelta = 0.001f;
 
 // camera
 gps::Camera myCamera(
@@ -91,6 +98,8 @@ std::vector<gps::Shader *> shaders;
 std::vector<gps::Shader *> shadersLights;
 // Shaders that require the light space transformation matrix
 std::vector<gps::Shader *> shadersLightSpTrMat;
+// Shaders that require data of the fog
+std::vector<gps::Shader *> shadersFog;
 
 // skybox
 gps::SkyBox skyBoxDay;
@@ -206,6 +215,19 @@ void rotateSun(float angle) {
     updateSunlight();
 }
 
+void updateFog() {
+    //send fog to shaders
+    for (const auto &shader : shadersFog) {
+        shader->useShaderProgram();
+        sendFog(fog, *shader);
+    }
+}
+
+void increaseFogDensity(float delta) {
+    fog.density = glm::clamp(fog.density + delta, fogMin, fogMax);
+    updateFog();
+}
+
 void windowResizeCallback(GLFWwindow *window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
 
@@ -279,6 +301,8 @@ void processMovement() {
     if (pressedKeys[GLFW_KEY_Q]) {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(-1.0f);
+        } else if (pressedKeys[GLFW_KEY_LEFT_SHIFT]) {
+            increaseFogDensity(-fogDelta);
         } else {
             rotateSun(-1.0f);
         }
@@ -287,6 +311,8 @@ void processMovement() {
     if (pressedKeys[GLFW_KEY_E]) {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             sun.scale(1.0f);
+        } else if (pressedKeys[GLFW_KEY_LEFT_SHIFT]) {
+            increaseFogDensity(fogDelta);
         } else {
             rotateSun(1.0f);
         }
@@ -314,7 +340,7 @@ void setWindowCallbacks() {
 }
 
 void initOpenGLState() {
-    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+    glClearColor(fog.color.r, fog.color.g, fog.color.b, fog.color.a);
     glViewport(0, 0, myWindow.getWindowDimensions().width, myWindow.getWindowDimensions().height);
     glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_DEPTH_TEST); // enable depth-testing
@@ -344,22 +370,20 @@ void initShaders() {
     shaders.push_back(&myBasicShader);
     shaders.push_back(&simpleShader);
 
-    // Update the view and projection matrices of the dependent shaders
-    updateViewMatrix(false);
-    updateProjectionMatrix();
-
     // Add shaders to the list of shaders that require data of lights (directional or positional)
     shadersLights.push_back(&myBasicShader);
 
     // Add shaders to the list of shaders that require the light space transformation matrix
     shadersLightSpTrMat.push_back(&myBasicShader);
     shadersLightSpTrMat.push_back(&depthMapShader);
+
+    // Add shaders to the list of shaders that require data of the fog
+    shadersFog.push_back(&myBasicShader);
 }
 
 void initLights() {
     sun.LoadModel("models/sun/sun.obj");
     sun.init(sunRotateAxis, sunRadius, sunScale, sunAngle);
-    updateSunlight();
 }
 
 void initModels() {
@@ -396,6 +420,24 @@ void initSkyBox() {
     nightFaces.push_back("textures/skybox-night/front.png");
 
     skyBoxNight.Load(nightFaces);
+}
+
+void initUniforms() {
+    // Update the view matrix of the dependent shaders
+    // Also updates the normal matrices of the models
+    updateViewMatrix();
+
+    // Update the projection matrix of the dependent shaders
+    updateProjectionMatrix();
+
+    // update the directional light
+    updateSunlight();
+
+    // Set the view mode
+    setViewMode(myBasicShader, viewMode);
+
+    // Send fog data to shaders
+    updateFog();
 }
 
 void drawObjects(gps::Shader shader, bool depthPass) {
@@ -488,8 +530,8 @@ int main(int argc, const char *argv[]) {
     initLights();
     initModels();
     initSkyBox();
+    initUniforms();
     initShadowMapFBO(SHADOW_WIDTH, SHADOW_HEIGHT, shadowMapFBO, depthMapTexture);
-    setViewMode(myBasicShader, viewMode);
     setWindowCallbacks();
 
     glCheckError();
