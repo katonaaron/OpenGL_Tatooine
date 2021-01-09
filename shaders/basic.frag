@@ -58,7 +58,7 @@ float computeShadow(DirLight light, vec3 normal)
     // perform perspective divide
     vec3 normalizedCoords = fPosLightSpace.xyz / fPosLightSpace.w;
 
-    // Transform to [0, 1] range
+    // transform to [0, 1] range
     normalizedCoords = normalizedCoords * 0.5f + 0.5f;
 
     // if the fragment is outside of the far plane from the light's point of view
@@ -66,17 +66,34 @@ float computeShadow(DirLight light, vec3 normal)
     if (normalizedCoords.z > 1.0f)
     return 0.0f;
 
-    // Get closest depth value from light's perspective
-    float closestDepth = texture(shadowMap, normalizedCoords.xy).r;
-
-    // Get depth of the current fragment from light's perspective
+    // get depth of the current fragment from light's perspective
     float currentDepth = normalizedCoords.z;
 
-    // Compute bias for correcting the shadow acne
+    // compute bias for correcting the shadow acne
     float bias = max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
 
-    // Check whether the current fragment is in shadow
-    float shadow = currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+    /// Apply percentage-close filtering for increasing the shadow quality
+
+    // variable for storing the final shadow value
+    float shadow = 0.0;
+
+    // size of a texture pixel (width, height)
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+    // check current and nearby depths in the shadowMap
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            // the closest depth for the given texture coordinates
+            float closestDepth = texture(shadowMap, normalizedCoords.xy + vec2(x, y) * texelSize).r;
+
+            // verify if the fragement is in shadow in the given texture coordinate
+            shadow += currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+        }
+    }
+
+    // compute the average of the shadow values
+    shadow /= 9.0;
+
     return shadow;
 }
 
@@ -95,11 +112,19 @@ void main()
 
     computeDirLight(dirLight, normal, viewDir, ambient, diffuse, specular);
 
-    //modulate with shadow
+    // modulate with shadow
     float shadow = computeShadow(dirLight, normal);
+    ambient *= 1.0f;// no shadow
+    diffuse *= 1.0f - shadow;
+    specular *= 1.0f - shadow;
+
+    // apply texture
+    ambient *= texture(diffuseTexture, fTexCoords).rgb;
+    diffuse *= texture(diffuseTexture, fTexCoords).rgb;
+    specular *= texture(specularTexture, fTexCoords).rgb;
 
     //compute final vertex color
-    vec3 color = min((ambient + (1.0f - shadow) * diffuse) * texture(diffuseTexture, fTexCoords).rgb + (1.0f - shadow) * specular * texture(specularTexture, fTexCoords).rgb, 1.0f);
+    vec3 color = min(ambient + diffuse + specular, 1.0f);
 
     fColor = vec4(color, 1.0f);
 }
