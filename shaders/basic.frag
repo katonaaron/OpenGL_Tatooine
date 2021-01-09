@@ -8,8 +8,8 @@ in vec2 fTexCoords;
 out vec4 fColor;
 
 //matrices
-uniform mat4 model;
 uniform mat4 view;
+
 //lighting
 struct DirLight {
     vec3 direction;
@@ -19,19 +19,18 @@ struct DirLight {
     vec3 specular;
 };
 uniform DirLight dirLight;
+
 // textures
 uniform sampler2D diffuseTexture;
 uniform sampler2D specularTexture;
 uniform sampler2D shadowMap;
 
-//components
-vec3 ambient;
+//constants
 float ambientStrength = 0.2f;
-vec3 diffuse;
-vec3 specular;
 float specularStrength = 0.5f;
+float shininess = 32;
 
-void computeDirLight()
+void computeDirLight(DirLight dirLight, out vec3 ambient, out vec3 diffuse, out vec3 specular)
 {
     //compute eye space coordinates
     vec3 normalEye = normalize(fNormal);
@@ -40,7 +39,10 @@ void computeDirLight()
     vec3 lightDirN = vec3(normalize(view * vec4(dirLight.direction, 0.0f)));
 
     //compute view direction (in eye coordinates, the viewer is situated at the origin
-    vec3 viewDir = normalize(- fPosEye.xyz);
+    vec3 viewDir = normalize(- fPosEye);
+
+    //compute half vector
+    vec3 halfVector = normalize(lightDirN + viewDir);
 
     //compute ambient light
     ambient = ambientStrength * dirLight.ambient;
@@ -49,8 +51,7 @@ void computeDirLight()
     diffuse = max(dot(normalEye, lightDirN), 0.0f) * dirLight.diffuse;
 
     //compute specular light
-    vec3 reflectDir = reflect(-lightDirN, normalEye);
-    float specCoeff = pow(max(dot(viewDir, reflectDir), 0.0f), 32);
+    float specCoeff = pow(max(dot(normalEye, halfVector), 0.0f), shininess);
     specular = specularStrength * specCoeff * dirLight.specular;
 }
 
@@ -100,7 +101,11 @@ float computeShadow()
 
 void main()
 {
-    computeDirLight();
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    computeDirLight(dirLight, ambient, diffuse, specular);
 
     //modulate with shadow
     float shadow = computeShadow();
