@@ -13,13 +13,17 @@
 class Model : public gps::Model3D {
 public:
 
-    void setModelMatrix(const glm::mat4& model);
-    void updateNormalMatrix(const glm::mat4& view);
-    const glm::mat4& getModelMatrix();
-    const glm::mat3& getNormalMatrix();
+    void setModelMatrix(const glm::mat4 &model);
 
-    void init(const glm::mat4& model, const glm::mat4& view);
-    void init(const glm::mat4& model);
+    void updateNormalMatrix(const glm::mat4 &view);
+
+    const glm::mat4 &getModelMatrix();
+
+    const glm::mat3 &getNormalMatrix();
+
+    void init(const glm::mat4 &model, const glm::mat4 &view);
+
+    void init(const glm::mat4 &model);
 
 private:
     // matrices

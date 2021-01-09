@@ -24,7 +24,7 @@ void initShadowMapFBO(GLsizei shadowWidth, GLsizei shadowHeight, GLuint &shadowM
                  NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -39,7 +39,7 @@ void initShadowMapFBO(GLsizei shadowWidth, GLsizei shadowHeight, GLuint &shadowM
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-glm::mat4 computeLightSpaceTrMatrix(const Sun& sun) {
+glm::mat4 computeLightSpaceTrMatrix(const Sun &sun) {
     //Return the light-space transformation matrix
     glm::mat4 lightView = glm::lookAt(sun.getPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 0.1f, 0.0f));
 

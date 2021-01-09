@@ -7,7 +7,7 @@
 
 glm::vec3 getPerpendicularTo(const glm::vec3 &vec) {
     glm::vec3 e;
-    if(vec.y == 0 && vec.z == 0) {
+    if (vec.y == 0 && vec.z == 0) {
         e = glm::vec3(0.0f, 1.0f, 0.0f);
     } else {
         e = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -15,27 +15,27 @@ glm::vec3 getPerpendicularTo(const glm::vec3 &vec) {
     return glm::normalize(glm::cross(e, vec));
 }
 
-void print(const glm::vec3& vec) {
+void print(const glm::vec3 &vec) {
     std::cout << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 }
 
-void print(const glm::mat4& mat) {
-    for(int i = 0; i< 4; i++) {
+void print(const glm::mat4 &mat) {
+    for (int i = 0; i < 4; i++) {
         std::cout << "(\n";
-        for(int j = 0; j < 4; j++) {
-            if(j > 0)
+        for (int j = 0; j < 4; j++) {
+            if (j > 0)
                 std::cout << ", ";
             std::cout << mat[i][j];
         }
     }
 }
 
-void println(const glm::vec3& vec) {
+void println(const glm::vec3 &vec) {
     print(vec);
     std::cout << "\n";
 }
 
-void println(const glm::mat4& mat) {
+void println(const glm::mat4 &mat) {
     print(mat);
     std::cout << "\n";
 }

@@ -54,13 +54,19 @@ private:
     glm::mat4 modelMat = glm::mat4(1.0f);
 
     void _setRotationAxis(const glm::vec3 &rotationAxis);
+
     void _setRadius(GLfloat radius);
+
     void _setScale(GLfloat scaleFactor);
+
     void _setAngle(GLfloat angle);
 
     void updateRotationMatrix();
+
     void updateTranslationMatrix();
+
     void updateScaleMatrix();
+
     void updateModelMatrix();
 };
 

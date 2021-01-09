@@ -22,7 +22,7 @@ void Model::updateNormalMatrix(const glm::mat4 &view) {
     normalMatrix = glm::mat3(glm::inverseTranspose(view * modelMatrix));
 }
 
-void Model::init(const glm::mat4 &model, const glm::mat4& view) {
+void Model::init(const glm::mat4 &model, const glm::mat4 &view) {
     setModelMatrix(model);
     updateNormalMatrix(view);
 }

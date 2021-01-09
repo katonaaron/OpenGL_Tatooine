@@ -6,6 +6,7 @@
 #define TATOOINE_VIEW_MODE_HPP
 
 #define GLEW_STATIC
+
 #include <GL/glew.h>
 #include "Shader.hpp"
 
@@ -18,6 +19,7 @@ enum class ViewMode {
 };
 
 void setViewMode(gps::Shader shader, ViewMode viewMode);
-void nextViewMode(gps::Shader shader, ViewMode& viewMode);
+
+void nextViewMode(gps::Shader shader, ViewMode &viewMode);
 
 #endif //TATOOINE_VIEW_MODE_HPP

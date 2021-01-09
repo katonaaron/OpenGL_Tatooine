@@ -1,11 +1,10 @@
 #define GLEW_STATIC
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp> //core glm functionality
 #include <glm/gtc/matrix_transform.hpp> //glm extension for generating common transformation matrices
-#include <glm/gtc/matrix_inverse.hpp> //glm extension for computing inverse matrices
-#include <glm/gtc/type_ptr.hpp> //glm extension for accessing the internal data structure of glm types
 
 #include "Window.h"
 #include "Shader.hpp"
@@ -40,7 +39,7 @@ Sun sun;
 glm::vec3 sunRotateAxis(1.0f, 1.0f, 1.0f);
 GLfloat sunRadius = 300.0f;
 GLfloat sunAngle = 180.0f;
-GLfloat sunScale= 5.0f;
+GLfloat sunScale = 5.0f;
 DirLight sunLight = {
         .direction = glm::vec3(),
         .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
@@ -77,7 +76,7 @@ Model baseScene;
 Model babyYoda;
 Model ship;
 gps::Model3D screenQuad;
-std::vector<Model*> models;
+std::vector<Model *> models;
 
 // shaders
 gps::Shader myBasicShader;
@@ -86,11 +85,11 @@ gps::Shader simpleShader;
 gps::Shader screenQuadShader;
 gps::Shader depthMapShader;
 // Shaders that require view and projection matrices
-std::vector<gps::Shader*> shaders;
+std::vector<gps::Shader *> shaders;
 // Shaders that require data of lights (directional or positional)
-std::vector<gps::Shader*> shadersLights;
+std::vector<gps::Shader *> shadersLights;
 // Shaders that require the light space transformation matrix
-std::vector<gps::Shader*> shadersLightSpTrMat;
+std::vector<gps::Shader *> shadersLightSpTrMat;
 
 // skybox
 gps::SkyBox skyBoxDay;
@@ -101,8 +100,7 @@ float zNear = 0.1f;
 float zFar = 500.0f;
 GLfloat cameraSpeed = 0.5f;
 
-GLenum glCheckError_(const char *file, int line)
-{
+GLenum glCheckError_(const char *file, int line) {
     GLenum errorCode;
     while ((errorCode = glGetError()) != GL_NO_ERROR) {
         std::string error;
@@ -133,6 +131,7 @@ GLenum glCheckError_(const char *file, int line)
     }
     return errorCode;
 }
+
 #define glCheckError() glCheckError_(__FILE__, __LINE__)
 
 void updateViewMatrix(bool updateNormals = true) {
@@ -155,7 +154,7 @@ void updateViewMatrix(bool updateNormals = true) {
 
 void updateProjectionMatrix() {
     const float aspect = (float) myWindow.getWindowDimensions().width
-            / (float) myWindow.getWindowDimensions().height;
+                         / (float) myWindow.getWindowDimensions().height;
 
     // create projection matrix
     projection = glm::perspective(
@@ -175,24 +174,25 @@ void updateProjectionMatrix() {
 void updateSunlight() {
     static const glm::vec3 axisY = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    sunLight.direction = glm::normalize(sun.getPosition()); // -(0, 0, 0). The vector from the origin to the center of the object.
+    sunLight.direction = glm::normalize(
+            sun.getPosition()); // -(0, 0, 0). The vector from the origin to the center of the object.
 
     isDay = angleBetween(axisY, sunLight.direction) < 80.0f;
 
     // send the directional sunlight data to the shaders which depend on it
-    for(const auto& shader : shadersLights) {
+    for (const auto &shader : shadersLights) {
         shader->useShaderProgram();
-        if(sun.getPosition().y > 0) {
+        if (sun.getPosition().y > 0) {
             sendDirLight(sunLight, *shader);
         } else {
             sendDirLight(nightLight, *shader);
         }
     }
 
-    const glm::mat4& lightSpaceTrMat = computeLightSpaceTrMatrix(sun);
+    const glm::mat4 &lightSpaceTrMat = computeLightSpaceTrMatrix(sun);
 
     // update the light space transformation matrices in the shaders which depend on it
-    for(const auto& shader : shadersLightSpTrMat) {
+    for (const auto &shader : shadersLightSpTrMat) {
         shader->useShaderProgram();
         shader->setUniform("lightSpaceTrMatrix", lightSpaceTrMat);
     }
@@ -203,7 +203,7 @@ void rotateSun(float angle) {
     updateSunlight();
 }
 
-void windowResizeCallback(GLFWwindow* window, int width, int height) {
+void windowResizeCallback(GLFWwindow *window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
 
     myWindow.setWindowDimensions({width, height});
@@ -213,7 +213,7 @@ void windowResizeCallback(GLFWwindow* window, int width, int height) {
     updateProjectionMatrix();
 }
 
-void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+void keyboardCallback(GLFWwindow *window, int key, int scancode, int action, int mode) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
@@ -227,7 +227,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
     }
 }
 
-void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
     static double lastX = xpos;
     static double lastY = ypos;
 
@@ -374,7 +374,7 @@ void initModels() {
 }
 
 void initSkyBox() {
-    std::vector<const GLchar*> dayFaces;
+    std::vector<const GLchar *> dayFaces;
     dayFaces.push_back("textures/skybox-day/right.tga");
     dayFaces.push_back("textures/skybox-day/left.tga");
     dayFaces.push_back("textures/skybox-day/top.tga");
@@ -384,7 +384,7 @@ void initSkyBox() {
 
     skyBoxDay.Load(dayFaces);
 
-    std::vector<const GLchar*> nightFaces;
+    std::vector<const GLchar *> nightFaces;
     nightFaces.push_back("textures/skybox-night/right.png");
     nightFaces.push_back("textures/skybox-night/left.png");
     nightFaces.push_back("textures/skybox-night/top.png");
@@ -398,10 +398,10 @@ void initSkyBox() {
 void drawObjects(gps::Shader shader, bool depthPass) {
     shader.useShaderProgram();
 
-    for(const auto& model : models ) {
+    for (const auto &model : models) {
         shader.setUniform("model", model->getModelMatrix());
         // do not send the normal matrix if we are rendering in the depth map
-        if(!depthPass)
+        if (!depthPass)
             shader.setUniform("normalMatrix", model->getNormalMatrix());
         model->Draw(shader);
     }
@@ -414,7 +414,7 @@ void renderScene() {
 
     depthMapShader.useShaderProgram();
 
-    glViewport(0,0,SHADOW_WIDTH, SHADOW_HEIGHT);
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -441,8 +441,7 @@ void renderScene() {
         glDisable(GL_DEPTH_TEST);
         screenQuad.Draw(screenQuadShader);
         glEnable(GL_DEPTH_TEST);
-    }
-    else {
+    } else {
         // final scene rendering pass (with shadows)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -472,11 +471,11 @@ void cleanup() {
     //cleanup code for your own data
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
 
     try {
         initOpenGLWindow();
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
