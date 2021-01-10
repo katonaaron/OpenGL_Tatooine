@@ -10,21 +10,27 @@ namespace gps {
     
     enum MOVE_DIRECTION {MOVE_FORWARD, MOVE_BACKWARD, MOVE_RIGHT, MOVE_LEFT};
     
-    class Camera
-    {
+    class Camera {
     public:
         //Camera constructor
         Camera(glm::vec3 cameraPosition, glm::vec3 cameraTarget, glm::vec3 cameraUp);
+
         //return the view matrix, using the glm::lookAt() function
         glm::mat4 getViewMatrix();
+
         //update the camera internal parameters following a camera move event
         //consider only the x, z coordinates in order to preserve height
         void move(MOVE_DIRECTION direction, float speed);
+
+        // moves the camera to the given position, looking at the given target
+        // the camera up direction is unchanged
+        void move(glm::vec3 cameraPosition, glm::vec3 cameraTarget);
+
         //update the camera internal parameters following a camera rotate event
         //yaw - camera rotation around the y axis
         //pitch - camera rotation around the x axis
         void rotate(float pitch, float yaw);
-        
+
     private:
         glm::vec3 cameraPosition;
         glm::vec3 cameraTarget;

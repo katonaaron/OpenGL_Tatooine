@@ -19,6 +19,7 @@
 #include "lights.hpp"
 #include "shadow.hpp"
 #include "fog.hpp"
+#include "CameraAnimation.hpp"
 
 #include <iostream>
 
@@ -93,10 +94,30 @@ const float fogMax = 0.05f;
 const float fogDelta = 0.001f;
 
 // camera
+GLfloat cameraSpeed = 0.5f;
+GLfloat cameraHeight = 2.0f;
 gps::Camera myCamera(
-        glm::vec3(0.0f, 2.0f, 0.0f),
-        glm::vec3(0.0f, 2.0f, -10.0f),
+        glm::vec3(0.0f, cameraHeight, 0.0f),
+        glm::vec3(0.0f, cameraHeight, -10.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
+
+// camera animation
+std::vector<glm::vec3> cameraControlPoints{
+        glm::vec3(-3.93687f, 2.0f, 10.6028f), // halfway between baby yoda and center
+        glm::vec3(0.0f, 2.0f, 0.0f), // center of scene - building
+        glm::vec3(-11.6519f, 2.0f, -5.9787f), // starship
+        glm::vec3(-9.06584f, 2.0f, -15.9509f), // building closeup
+        glm::vec3(8.31961f, 2.0f, -12.024f), // vaporizator
+        glm::vec3(11.9526f, 2.0f, 6.16476f), // fruit stand
+        glm::vec3(15.3243f, 1.0f, 7.35698f), // fruit stand closeup
+        glm::vec3(12.5138f, 2.0f, 14.4142f), // seats
+        glm::vec3(15.0508f, 1.0f, 16.2713), // seats closeup
+        glm::vec3(10.7486f, 2.0f, 23.1867f), // R2-D2
+        glm::vec3(-7.87374f, 2.0f, 21.2056f), // baby Yoda (Grogu)
+};
+GLfloat cameraSpeedAnimated = 0.2f;
+bool isCameraAnimated = false;
+CameraAnimation cameraAnimation(cameraSpeedAnimated, CameraAnimation::CENTRIPETAL, cameraControlPoints, myCamera);
 
 ViewMode viewMode = ViewMode::SOLID_SMOOTH;
 
@@ -133,7 +154,6 @@ gps::SkyBox skyBoxNight;
 // constants
 float zNear = 0.1f;
 float zFar = 500.0f;
-GLfloat cameraSpeed = 0.5f;
 
 GLenum glCheckError_(const char *file, int line) {
     GLenum errorCode;
@@ -279,6 +299,9 @@ void keyboardCallback(GLFWwindow *window, int key, int scancode, int action, int
 }
 
 void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
+    if (isCameraAnimated)
+        return;
+
     static double lastX = xpos;
     static double lastY = ypos;
 
@@ -305,23 +328,31 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
 
 void processMovement() {
     if (pressedKeys[GLFW_KEY_W]) {
-        myCamera.move(gps::MOVE_FORWARD, cameraSpeed);
-        updateViewMatrix();
+        if (!isCameraAnimated) {
+            myCamera.move(gps::MOVE_FORWARD, cameraSpeed);
+            updateViewMatrix();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_S]) {
-        myCamera.move(gps::MOVE_BACKWARD, cameraSpeed);
-        updateViewMatrix();
+        if (!isCameraAnimated) {
+            myCamera.move(gps::MOVE_BACKWARD, cameraSpeed);
+            updateViewMatrix();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_A]) {
-        myCamera.move(gps::MOVE_LEFT, cameraSpeed);
-        updateViewMatrix();
+        if (!isCameraAnimated) {
+            myCamera.move(gps::MOVE_LEFT, cameraSpeed);
+            updateViewMatrix();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_D]) {
-        myCamera.move(gps::MOVE_RIGHT, cameraSpeed);
-        updateViewMatrix();
+        if (!isCameraAnimated) {
+            myCamera.move(gps::MOVE_RIGHT, cameraSpeed);
+            updateViewMatrix();
+        }
     }
 
     if (pressedKeys[GLFW_KEY_Q]) {
@@ -352,6 +383,14 @@ void processMovement() {
     if (pressedKeys[GLFW_KEY_V]) {
         nextViewMode(myBasicShader, viewMode);
         pressedKeys[GLFW_KEY_V] = 0;
+    }
+
+    if (pressedKeys[GLFW_KEY_C]) {
+        pressedKeys[GLFW_KEY_C] = 0;
+        if (!isCameraAnimated) {
+            cameraAnimation.reset();
+        }
+        isCameraAnimated = !isCameraAnimated;
     }
 }
 
@@ -499,6 +538,12 @@ void drawObjects(gps::Shader shader, bool depthPass) {
 }
 
 void renderScene() {
+    // animate camera
+    if (isCameraAnimated) {
+        cameraAnimation.animate();
+        updateViewMatrix();
+    }
+
     // depth maps creation pass
     // Render the scene in the depth map
     // Render the scene to the depth buffer

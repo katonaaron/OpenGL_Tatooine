@@ -4,13 +4,8 @@ namespace gps {
 
     //Camera constructor
     Camera::Camera(glm::vec3 cameraPosition, glm::vec3 cameraTarget, glm::vec3 cameraUp) {
-        this->cameraPosition = cameraPosition;
-        this->cameraTarget = cameraTarget;
         this->cameraUpDirection = cameraUp;
-
-        this->cameraFrontDirection = glm::normalize(cameraTarget - cameraPosition);
-        this->cameraRightDirection = glm::normalize(glm::cross(cameraFrontDirection, cameraUpDirection));
-        this->cameraUpDirection = glm::normalize(glm::cross(cameraRightDirection, cameraFrontDirection));
+        move(cameraPosition, cameraTarget);
     }
 
     //return the view matrix, using the glm::lookAt() function
@@ -42,6 +37,15 @@ namespace gps {
 
 
         cameraTarget = cameraPosition + cameraFrontDirection;
+    }
+
+    void Camera::move(glm::vec3 cameraPosition, glm::vec3 cameraTarget) {
+        this->cameraPosition = cameraPosition;
+        this->cameraTarget = cameraTarget;
+
+        this->cameraFrontDirection = glm::normalize(cameraTarget - cameraPosition);
+        this->cameraRightDirection = glm::normalize(glm::cross(cameraFrontDirection, cameraUpDirection));
+        this->cameraUpDirection = glm::normalize(glm::cross(cameraRightDirection, cameraFrontDirection));
     }
 
     float constrain(float x, float a, float b) {
