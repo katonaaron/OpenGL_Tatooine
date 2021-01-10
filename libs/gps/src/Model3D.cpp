@@ -4,8 +4,34 @@ namespace gps {
 
 	void Model3D::LoadModel(std::string fileName)
 	{
-        std::string basePath = fileName.substr(0, fileName.find_last_of('/')) + "/";
+		std::string basePath = fileName.substr(0, fileName.find_last_of('/')) + "/";
 		ReadOBJ(fileName, basePath);
+
+		if (meshBoundingBoxes.empty()) {
+			boundingBox = {
+					.min = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+					.max = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+			};
+			return;
+		}
+
+		boundingBox.min = std::accumulate(
+				std::next(meshBoundingBoxes.begin()),
+				meshBoundingBoxes.end(),
+				meshBoundingBoxes[0].min,
+				[](const glm::vec4 &acc, const BoundingBox &bb) {
+					return glm::min(acc, bb.min);
+				}
+		);
+
+		boundingBox.max = std::accumulate(
+				std::next(meshBoundingBoxes.begin()),
+				meshBoundingBoxes.end(),
+				meshBoundingBoxes[0].max,
+				[](const glm::vec4 &acc, const BoundingBox &bb) {
+					return glm::max(acc, bb.max);
+				}
+		);
 	}
 
     void Model3D::LoadModel(std::string fileName, std::string basePath)
@@ -48,6 +74,11 @@ namespace gps {
 			std::vector<gps::Vertex> vertices;
 			std::vector<GLuint> indices;
 			std::vector<gps::Texture> textures;
+			const float floatMax = std::numeric_limits<float>::max();
+			BoundingBox bBox{
+					.min = glm::vec4(floatMax, floatMax, floatMax, 1.0f),
+					.max = glm::vec4(-floatMax, -floatMax, -floatMax, 1.0f)
+			};
 
 			// Loop over faces(polygon)
 			size_t index_offset = 0;
@@ -87,6 +118,10 @@ namespace gps {
 					vertices.push_back(currentVertex);
 
 					indices.push_back(index_offset + v);
+
+					bBox.min = glm::min(bBox.min, glm::vec4(vertexPosition, 1.0f));
+					bBox.max = glm::max(bBox.max, glm::vec4(vertexPosition, 1.0f));
+
 				}
 
 				index_offset += fv;
@@ -123,8 +158,7 @@ namespace gps {
 
 					//specular texture
 					std::string specularTexturePath = materials[materialId].specular_texname;
-					if (!specularTexturePath.empty())
-					{
+					if (!specularTexturePath.empty()) {
 						gps::Texture currentTexture;
 						currentTexture = LoadTexture(basePath + specularTexturePath, "specularTexture");
 						textures.push_back(currentTexture);
@@ -133,6 +167,7 @@ namespace gps {
 			}
 
 			meshes.push_back(gps::Mesh(vertices, indices, textures));
+			meshBoundingBoxes.push_back(bBox);
 		}
 	}
 
@@ -221,13 +256,25 @@ namespace gps {
             glDeleteTextures(1, &loadedTextures.at(i).id);
         }
 
-        for (size_t i = 0; i < meshes.size(); i++) {
-            GLuint VBO = meshes.at(i).getBuffers().VBO;
-            GLuint EBO = meshes.at(i).getBuffers().EBO;
-            GLuint VAO = meshes.at(i).getBuffers().VAO;
-            glDeleteBuffers(1, &VBO);
-            glDeleteBuffers(1, &EBO);
-            glDeleteVertexArrays(1, &VAO);
-        }
+		for (size_t i = 0; i < meshes.size(); i++) {
+			GLuint VBO = meshes.at(i).getBuffers().VBO;
+			GLuint EBO = meshes.at(i).getBuffers().EBO;
+			GLuint VAO = meshes.at(i).getBuffers().VAO;
+			glDeleteBuffers(1, &VBO);
+			glDeleteBuffers(1, &EBO);
+			glDeleteVertexArrays(1, &VAO);
+		}
+	}
+
+	std::vector<gps::Mesh> &Model3D::getMeshes() {
+		return meshes;
+	}
+
+	std::vector<BoundingBox> Model3D::getMeshBoundingBoxes() const {
+		return meshBoundingBoxes;
+	}
+
+	BoundingBox Model3D::getBoundingBox() const {
+		return boundingBox;
 	}
 }

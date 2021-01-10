@@ -30,3 +30,24 @@ void Model::init(const glm::mat4 &model, const glm::mat4 &view) {
 void Model::init(const glm::mat4 &model) {
     init(model, glm::mat3(0.0f));
 }
+
+BoundingBox Model::getBoundingBox() const {
+    return modelTransformBoundingBox(Model3D::getBoundingBox());
+}
+
+std::vector<BoundingBox> Model::getMeshBoundingBoxes() const {
+    const std::vector<BoundingBox> &bbOrig = Model3D::getMeshBoundingBoxes();
+    std::vector<BoundingBox> bbTranslated;
+    bbTranslated.reserve(bbOrig.size());
+    std::transform(bbOrig.begin(), bbOrig.end(), back_inserter(bbTranslated), [this](const BoundingBox &bb) {
+        return modelTransformBoundingBox(bb);
+    });
+    return bbTranslated;
+}
+
+BoundingBox Model::modelTransformBoundingBox(const BoundingBox &boundingBox) const {
+    return {
+            .min = modelMatrix * boundingBox.min,
+            .max = modelMatrix * boundingBox.max
+    };
+}

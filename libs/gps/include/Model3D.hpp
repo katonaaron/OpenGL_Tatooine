@@ -9,35 +9,52 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <limits>
+#include <numeric>
+
+struct BoundingBox {
+    glm::vec4 min;
+    glm::vec4 max;
+};
 
 namespace gps {
 
-    class Model3D
-    {
+    class Model3D {
 
     public:
         ~Model3D();
 
-		void LoadModel(std::string fileName);
+        void LoadModel(std::string fileName);
 
-		void LoadModel(std::string fileName, std::string basePath);
+        void LoadModel(std::string fileName, std::string basePath);
 
         virtual void Draw(gps::Shader shaderProgram);
 
+        virtual BoundingBox getBoundingBox() const;
+
+        virtual std::vector<BoundingBox> getMeshBoundingBoxes() const;
+
+    protected:
+        std::vector<gps::Mesh> &getMeshes();
+
     private:
-		// Component meshes - group of objects
+        // Component meshes - group of objects
         std::vector<gps::Mesh> meshes;
-		// Associated textures
+        // Associated textures
         std::vector<gps::Texture> loadedTextures;
+        // Bounding boxes of the meshes
+        std::vector<BoundingBox> meshBoundingBoxes;
+        // Bounding box of the model
+        BoundingBox boundingBox;
 
-		// Does the parsing of the .obj file and fills in the data structure
-		void ReadOBJ(std::string fileName, std::string basePath);
+        // Does the parsing of the .obj file and fills in the data structure
+        void ReadOBJ(std::string fileName, std::string basePath);
 
-		// Retrieves a texture associated with the object - by its name and type
-		gps::Texture LoadTexture(std::string path, std::string type);
+        // Retrieves a texture associated with the object - by its name and type
+        gps::Texture LoadTexture(std::string path, std::string type);
 
-		// Reads the pixel data from an image file and loads it into the video memory
-		GLuint ReadTextureFromFile(const char* file_name);
+        // Reads the pixel data from an image file and loads it into the video memory
+        GLuint ReadTextureFromFile(const char *file_name);
     };
 }
 
