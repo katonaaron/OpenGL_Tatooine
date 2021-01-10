@@ -69,6 +69,15 @@ std::vector<PointLight> pointLights{
                 .ambient = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
                 .diffuse = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
                 .specular = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
+        },
+        {
+                .position = glm::vec3(-16.179f + 0.5f, 2.0f, 20.967f - 2.0f),
+                .constant = 1.0f,
+                .linear = 0.35f,
+                .quadratic = 0.44f,
+                .ambient = glm::vec3(1.0f, 1.0f, 0.2f), //yellowish light
+                .diffuse = glm::vec3(1.0f, 1.0f, 0.2f), //yellowish light
+                .specular = glm::vec3(1.0f, 1.0f, 0.2f), //yellowish light
         }
 };
 std::vector<ColoredModel> fireflies;

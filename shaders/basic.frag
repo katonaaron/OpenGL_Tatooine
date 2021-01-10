@@ -31,7 +31,7 @@ struct PointLight {
 };
 
 uniform DirLight dirLight;
-#define NR_POINT_LIGHTS 1
+#define NR_POINT_LIGHTS 2
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 
 // fog
