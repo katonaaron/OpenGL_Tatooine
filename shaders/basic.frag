@@ -18,7 +18,21 @@ struct DirLight {
     vec3 diffuse;
     vec3 specular;
 };
+struct PointLight {
+    vec3 position;
+
+    float constant;
+    float linear;
+    float quadratic;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
 uniform DirLight dirLight;
+#define NR_POINT_LIGHTS 1
+uniform PointLight pointLights[NR_POINT_LIGHTS];
 
 // fog
 struct Fog {
@@ -38,24 +52,58 @@ float ambientStrength = 0.2f;
 float specularStrength = 0.5f;
 float shininess = 32.0f;
 
-void computeDirLight(DirLight light, vec3 normal, vec3 viewDir, out vec3 ambient, out vec3 diffuse, out vec3 specular)
+void computeDirLight(
+vec3 lightDir,
+vec3 colorAmbient, vec3 colorDiffuse, vec3 colorSpecular,
+vec3 normal, vec3 viewDir,
+out vec3 ambient, out vec3 diffuse, out vec3 specular
+)
 {
-    // normalize light direction
-    vec3 lightDir = vec3(normalize(view * vec4(light.direction, 0.0f)));
-
     // compute half vector
     vec3 halfVector = normalize(lightDir + viewDir);
 
     //compute ambient light
-    ambient = light.ambient * ambientStrength;
+    ambient = colorAmbient * ambientStrength;
 
     //compute diffuse light
     float diffCoeff = max(dot(normal, lightDir), 0.0f);
-    diffuse = light.diffuse * diffCoeff;
+    diffuse = colorDiffuse * diffCoeff;
 
     //compute specular light
     float specCoeff = pow(max(dot(normal, halfVector), 0.0f), shininess);
-    specular = light.specular * specCoeff * specularStrength;
+    specular = colorSpecular * specCoeff * specularStrength;
+}
+
+void computeDirLight(DirLight light, vec3 normal, vec3 viewDir, out vec3 ambient, out vec3 diffuse, out vec3 specular)
+{
+    // convert to eye coordinates and normalize light direction
+    vec3 lightDir = vec3(normalize(view * vec4(light.direction, 0.0f)));
+
+    // compute light components
+    computeDirLight(lightDir, light.ambient, light.diffuse, light.specular, normal, viewDir, ambient, diffuse, specular);
+}
+
+void computePointLight(PointLight light, vec3 normal, vec3 viewDir, out vec3 ambient, out vec3 diffuse, out vec3 specular)
+{
+    // compute the light poisiton in eye coordinates
+    vec3 lightPos = vec3(view * vec4(light.position, 1.0f));
+
+    // normalize light direction
+    vec3 lightDir = normalize(lightPos - fPosEye);
+
+    // compute light components as a directional light
+    computeDirLight(lightDir, light.ambient, light.diffuse, light.specular, normal, viewDir, ambient, diffuse, specular);
+
+    // compute distance to light
+    float dist = length(lightPos - fPosEye);
+
+    // compute attenuation
+    float att = 1.0f / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
+
+    // apply attenuation
+    ambient *= att;
+    diffuse *= att;
+    specular *= att;
 }
 
 float computeShadow(DirLight light, vec3 normal)
@@ -124,6 +172,7 @@ void main()
     vec3 diffuse;
     vec3 specular;
 
+    // compute the directional light effect
     computeDirLight(dirLight, normal, viewDir, ambient, diffuse, specular);
 
     // modulate with shadow
@@ -131,6 +180,19 @@ void main()
     ambient *= 1.0f;// no shadow
     diffuse *= 1.0f - shadow;
     specular *= 1.0f - shadow;
+
+    // compute the positional light effects
+    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
+        vec3 p_ambient;
+        vec3 p_diffuse;
+        vec3 p_specular;
+        computePointLight(pointLights[i], normal, viewDir, p_ambient, p_diffuse, p_specular);
+
+        // add contribution to the final color
+        ambient += p_ambient;
+        diffuse += p_diffuse;
+        specular += p_specular;
+    }
 
     // apply texture
     ambient *= texture(diffuseTexture, fTexCoords).rgb;

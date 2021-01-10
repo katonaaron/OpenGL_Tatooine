@@ -20,14 +20,17 @@ void print(const glm::vec3 &vec) {
 }
 
 void print(const glm::mat4 &mat) {
+    std::cout << "(\n";
     for (int i = 0; i < 4; i++) {
-        std::cout << "(\n";
+        std::cout << " (";
         for (int j = 0; j < 4; j++) {
             if (j > 0)
                 std::cout << ", ";
-            std::cout << mat[i][j];
+            std::cout << mat[j][i];
         }
+        std::cout << ")\n";
     }
+    std::cout << ")\n";
 }
 
 void println(const glm::vec3 &vec) {

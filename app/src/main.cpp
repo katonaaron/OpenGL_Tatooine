@@ -13,6 +13,7 @@
 #include "SkyBox.hpp"
 
 #include "Model.hpp"
+#include "ColoredModel.hpp"
 #include "view_mode.hpp"
 #include "Sun.hpp"
 #include "lights.hpp"
@@ -35,7 +36,7 @@ bool showDepthMap = false;
 glm::mat4 view;
 glm::mat4 projection;
 
-// sun
+// Directional light = Sun
 Sun sun;
 glm::vec3 sunRotateAxis(1.0f, 1.0f, 1.0f);
 GLfloat sunRadius = 300.0f;
@@ -58,11 +59,25 @@ DirLight nightLight = {
 // Day or Night
 bool isDay = true;
 
+// Point lights = fireflies
+std::vector<PointLight> pointLights{
+        {
+                .position = glm::vec3(19.488f - 2.3786f, 1.5f, 10.514f - 5.0f),
+                .constant = 1.0f,
+                .linear = 0.35f,
+                .quadratic = 0.44f,
+                .ambient = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
+                .diffuse = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
+                .specular = glm::vec3(1.0f, 1.0f, 0.0f), //yellow light
+        }
+};
+std::vector<ColoredModel> fireflies;
+
 // Fog = Sandstorm
 Fog fog{
         .position = glm::vec3(0.0f, 0.0f, 0.0f),
         .color = glm::vec4(0.76f, 0.69f, 0.5f, 1.0f), // sand color
-        .density = 0.02f
+        .density = 0.00f
 };
 const float fogMin = 0.0f;
 const float fogMax = 0.05f;
@@ -90,6 +105,7 @@ std::vector<Model *> models;
 gps::Shader myBasicShader;
 gps::Shader skyboxShader;
 gps::Shader simpleShader;
+gps::Shader simpleColorShader;
 gps::Shader screenQuadShader;
 gps::Shader depthMapShader;
 // Shaders that require view and projection matrices
@@ -188,6 +204,7 @@ void updateSunlight() {
     // The light direction is the vector from the origin to the center of the sun object.
     // lightDir = sunPosition - (0, 0, 0)
     sunLight.direction = glm::normalize(sun.getPosition());
+    nightLight.direction = glm::normalize(sun.getPosition());
 
     isDay = angleBetween(axisY, sunLight.direction) < 80.0f;
 
@@ -359,6 +376,8 @@ void initShaders() {
             "shaders/basic.geom");
     simpleShader.loadShader("shaders/simpleTex.vert",
                             "shaders/simpleTex.frag");
+    simpleColorShader.loadShader("shaders/simple.vert",
+                                 "shaders/uniformColor.frag");
     skyboxShader.loadShader("shaders/skyboxShader.vert",
                             "shaders/skyboxShader.frag");
     screenQuadShader.loadShader("shaders/screenQuad.vert",
@@ -369,6 +388,7 @@ void initShaders() {
     // Add shaders to the list of shaders that require view and projection matrices
     shaders.push_back(&myBasicShader);
     shaders.push_back(&simpleShader);
+    shaders.push_back(&simpleColorShader);
 
     // Add shaders to the list of shaders that require data of lights (directional or positional)
     shadersLights.push_back(&myBasicShader);
@@ -384,6 +404,23 @@ void initShaders() {
 void initLights() {
     sun.LoadModel("models/sun/sun.obj");
     sun.init(sunRotateAxis, sunRadius, sunScale, sunAngle);
+
+    // Create firefly model for each point light
+    for (const auto &pointLight : pointLights) {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), pointLight.position);
+
+        fireflies.emplace_back();
+        ColoredModel &firefly = fireflies.back();
+        firefly.LoadModel("models/firefly/firefly.obj");
+        firefly.init(model);
+        firefly.color = pointLight.diffuse;
+    }
+
+    // send the positional light data to the shaders which depend on it
+    for (const auto &shader : shadersLights) {
+        shader->useShaderProgram();
+        sendPointLights(pointLights, *shader);
+    }
 }
 
 void initModels() {
@@ -502,6 +539,14 @@ void renderScene() {
 
         // draw sun
         sun.Draw(simpleShader);
+
+        // draw fireflies
+        simpleColorShader.useShaderProgram();
+        for (auto &firefly : fireflies) {
+            simpleColorShader.setUniform("model", firefly.getModelMatrix());
+            simpleColorShader.setUniform("color", glm::vec4(firefly.color, 1.0f));
+            firefly.Draw(simpleColorShader);
+        }
 
         // draw skybox
         if (isDay)
