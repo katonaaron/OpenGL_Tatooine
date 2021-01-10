@@ -20,6 +20,7 @@
 #include "shadow.hpp"
 #include "fog.hpp"
 #include "CameraAnimation.hpp"
+#include "BabyYoda.hpp"
 
 #include <iostream>
 
@@ -126,7 +127,8 @@ GLboolean pressedKeys[1024];
 
 // models
 Model baseScene;
-Model babyYoda;
+BabyYoda babyYoda;
+float babyYodaAnimationSpeed = 1.0f;
 Model ship;
 gps::Model3D screenQuad;
 std::vector<Model *> models;
@@ -525,6 +527,10 @@ void initUniforms() {
     updateFog();
 }
 
+void initAnimations() {
+    babyYoda.startAnimation(babyYodaAnimationSpeed);
+}
+
 void drawObjects(gps::Shader shader, bool depthPass) {
     shader.useShaderProgram();
 
@@ -630,6 +636,7 @@ int main(int argc, const char *argv[]) {
     initModels();
     initSkyBox();
     initUniforms();
+    initAnimations();
     initShadowMapFBO(SHADOW_WIDTH, SHADOW_HEIGHT, shadowMapFBO, depthMapTexture);
     setWindowCallbacks();
 
