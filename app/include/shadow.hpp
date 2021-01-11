@@ -12,7 +12,7 @@
 
 void initShadowMapFBO(GLsizei shadowWidth, GLsizei shadowHeight, GLuint &shadowMapFBO, GLuint &depthMapTexture);
 
-glm::mat4 computeLightSpaceTrMatrix(const Sun &sun);
+glm::mat4 computeLightSpaceTrMatrix(const glm::vec3 &lightDir, const BoundingBox &sceneBoundingBox);
 
 
 #endif //TATOOINE_SHADOW_HPP

@@ -249,7 +249,7 @@ void updateSunlight() {
         }
     }
 
-    const glm::mat4 &lightSpaceTrMat = computeLightSpaceTrMatrix(sun);
+    const glm::mat4 &lightSpaceTrMat = computeLightSpaceTrMatrix(sunLight.direction, baseScene.getBoundingBox());
 
     // update the light space transformation matrices in the shaders which depend on it
     for (const auto &shader : shadersLightSpTrMat) {
