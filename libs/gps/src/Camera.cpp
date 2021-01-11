@@ -16,26 +16,7 @@ namespace gps {
     //update the camera internal parameters following a camera move event
     //consider only the x, z coordinates in order to preserve height
     void Camera::move(MOVE_DIRECTION direction, float speed) {
-        glm::vec3 frontDir = glm::normalize(glm::vec3(cameraFrontDirection.x, 0.0f, cameraFrontDirection.z));
-        glm::vec3 rightDir = glm::normalize(glm::vec3(cameraRightDirection.x, 0.0f, cameraRightDirection.z));
-
-        switch (direction) {
-
-            case MOVE_FORWARD:
-                cameraPosition += frontDir * speed;
-                break;
-            case MOVE_BACKWARD:
-                cameraPosition -= frontDir * speed;
-                break;
-            case MOVE_RIGHT:
-                cameraPosition += rightDir * speed;
-                break;
-            case MOVE_LEFT:
-                cameraPosition -= rightDir * speed;
-                break;
-        }
-
-
+        cameraPosition = nextPosition(direction, speed);
         cameraTarget = cameraPosition + cameraFrontDirection;
     }
 
@@ -48,21 +29,13 @@ namespace gps {
         this->cameraUpDirection = glm::normalize(glm::cross(cameraRightDirection, cameraFrontDirection));
     }
 
-    float constrain(float x, float a, float b) {
-        if (x < a)
-            return a;
-        if (b < x)
-            return b;
-        return x;
-    }
-
     //update the camera internal parameters following a camera rotate event
     //yaw - camera rotation around the y axis
     //pitch - camera rotation around the x axis
     void Camera::rotate(float pitch, float yaw) {
         // Constrain angle
         static float angleX = 0.0f;
-        pitch = constrain(angleX + pitch, -89.9, 89.9) - angleX;
+        pitch = glm::clamp(angleX + pitch, -89.9f, 89.9f) - angleX;
         angleX = angleX + pitch;
 
         glm::mat4 rot(1.0f);
@@ -79,5 +52,21 @@ namespace gps {
 
         // use this or don't use this and limit the angles
         //cameraUpDirection = glm::normalize(glm::cross(cameraRightDirection, cameraFrontDirection));
+    }
+
+    glm::vec3 Camera::nextPosition(MOVE_DIRECTION direction, float speed) {
+        glm::vec3 frontDir = glm::normalize(glm::vec3(cameraFrontDirection.x, 0.0f, cameraFrontDirection.z));
+        glm::vec3 rightDir = glm::normalize(glm::vec3(cameraRightDirection.x, 0.0f, cameraRightDirection.z));
+
+        switch (direction) {
+            case MOVE_FORWARD:
+                return cameraPosition + frontDir * speed;
+            case MOVE_BACKWARD:
+                return cameraPosition - frontDir * speed;
+            case MOVE_RIGHT:
+                return cameraPosition + rightDir * speed;
+            case MOVE_LEFT:
+                return cameraPosition - rightDir * speed;
+        }
     }
 }

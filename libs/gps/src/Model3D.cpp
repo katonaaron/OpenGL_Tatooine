@@ -267,14 +267,26 @@ namespace gps {
 	}
 
 	std::vector<gps::Mesh> &Model3D::getMeshes() {
-		return meshes;
-	}
+        return meshes;
+    }
 
-	std::vector<BoundingBox> Model3D::getMeshBoundingBoxes() const {
-		return meshBoundingBoxes;
-	}
+    std::vector<BoundingBox> Model3D::getMeshBoundingBoxes() const {
+        return meshBoundingBoxes;
+    }
 
-	BoundingBox Model3D::getBoundingBox() const {
-		return boundingBox;
-	}
+    BoundingBox Model3D::getBoundingBox() const {
+        return boundingBox;
+    }
+
+    bool Model3D::collidesWith(const BoundingBox &bb) {
+        if (!collides(getBoundingBox(), bb))
+            return false;
+
+        for (const BoundingBox &meshBB : getMeshBoundingBoxes()) {
+            if (collides(meshBB, bb))
+                return true;
+        }
+
+        return false;
+    }
 }

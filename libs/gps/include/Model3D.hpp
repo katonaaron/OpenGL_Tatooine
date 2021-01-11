@@ -12,10 +12,8 @@
 #include <limits>
 #include <numeric>
 
-struct BoundingBox {
-    glm::vec4 min;
-    glm::vec4 max;
-};
+#include "BoundingBox.hpp"
+
 
 namespace gps {
 
@@ -33,6 +31,8 @@ namespace gps {
         virtual BoundingBox getBoundingBox() const;
 
         virtual std::vector<BoundingBox> getMeshBoundingBoxes() const;
+
+        bool collidesWith(const BoundingBox &bb);
 
     protected:
         std::vector<gps::Mesh> &getMeshes();

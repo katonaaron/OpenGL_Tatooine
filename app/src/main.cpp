@@ -98,8 +98,10 @@ const float fogMax = 0.05f;
 const float fogDelta = 0.001f;
 
 // camera
-GLfloat cameraSpeed = 0.5f;
-GLfloat cameraHeight = 2.0f;
+const GLfloat cameraSpeed = 0.5f;
+const GLfloat cameraHeight = 2.0f;
+const GLfloat cameraCollisionRadius = 1.0f;
+const GLfloat cameraCollisionBottomHeight = 0.5f;
 gps::Camera myCamera(
         glm::vec3(0.0f, cameraHeight, 0.0f),
         glm::vec3(0.0f, cameraHeight, -10.0f),
@@ -135,6 +137,8 @@ float babyYodaAnimationSpeed = 1.0f;
 Model ship;
 gps::Model3D screenQuad;
 std::vector<Model *> models;
+// models for which collision detection is enabled
+std::vector<Model *> modelsColliding;
 
 // shaders
 gps::Shader myBasicShader;
@@ -159,6 +163,7 @@ gps::SkyBox skyBoxNight;
 // constants
 float zNear = 0.1f;
 float zFar = 500.0f;
+bool collisionEnabled = true;
 
 GLenum glCheckError_(const char *file, int line) {
     GLenum errorCode;
@@ -286,6 +291,38 @@ void increaseFogDensity(float delta) {
     updateFog();
 }
 
+bool collidesWithModels(const BoundingBox &boundingBox) {
+    for (const auto &model : modelsColliding) {
+        if (model->collidesWith(boundingBox))
+            return true;
+    }
+    return false;
+}
+
+void moveCamera(gps::MOVE_DIRECTION direction) {
+    if (!isCameraAnimated) {
+        if (collisionEnabled) {
+            const glm::vec3 &cameraPosition = myCamera.nextPosition(direction, cameraSpeed);
+
+            BoundingBox cameraBoundingBox{
+                    .min = glm::vec4(
+                            cameraPosition.x - cameraCollisionRadius,
+                            cameraCollisionBottomHeight,
+                            cameraPosition.z - cameraCollisionRadius,
+                            1.0f
+                    ),
+                    .max = glm::vec4(cameraPosition + cameraCollisionRadius, 1.0f)
+            };
+
+            if (collidesWithModels(cameraBoundingBox))
+                return;
+        }
+
+        myCamera.move(direction, cameraSpeed);
+        updateViewMatrix();
+    }
+}
+
 void windowResizeCallback(GLFWwindow *window, int width, int height) {
     fprintf(stdout, "Window resized! New width: %d , and height: %d\n", width, height);
 
@@ -338,35 +375,7 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
     updateViewMatrix();
 }
 
-void processMovement() {
-    if (pressedKeys[GLFW_KEY_W]) {
-        if (!isCameraAnimated) {
-            myCamera.move(gps::MOVE_FORWARD, cameraSpeed);
-            updateViewMatrix();
-        }
-    }
-
-    if (pressedKeys[GLFW_KEY_S]) {
-        if (!isCameraAnimated) {
-            myCamera.move(gps::MOVE_BACKWARD, cameraSpeed);
-            updateViewMatrix();
-        }
-    }
-
-    if (pressedKeys[GLFW_KEY_A]) {
-        if (!isCameraAnimated) {
-            myCamera.move(gps::MOVE_LEFT, cameraSpeed);
-            updateViewMatrix();
-        }
-    }
-
-    if (pressedKeys[GLFW_KEY_D]) {
-        if (!isCameraAnimated) {
-            myCamera.move(gps::MOVE_RIGHT, cameraSpeed);
-            updateViewMatrix();
-        }
-    }
-
+void processKeys() {
     if (pressedKeys[GLFW_KEY_Q]) {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
             scaleSun(-sunScaleDelta);
@@ -403,6 +412,30 @@ void processMovement() {
             cameraAnimation.reset();
         }
         isCameraAnimated = !isCameraAnimated;
+    }
+
+    if (pressedKeys[GLFW_KEY_B]) {
+        pressedKeys[GLFW_KEY_B] = 0;
+        collisionEnabled = !collisionEnabled;
+    }
+
+    // Process camera movements
+    // At the end, in order to do all model transformations before it.
+
+    if (pressedKeys[GLFW_KEY_W]) {
+        moveCamera(gps::MOVE_FORWARD);
+    }
+
+    if (pressedKeys[GLFW_KEY_S]) {
+        moveCamera(gps::MOVE_BACKWARD);
+    }
+
+    if (pressedKeys[GLFW_KEY_A]) {
+        moveCamera(gps::MOVE_LEFT);
+    }
+
+    if (pressedKeys[GLFW_KEY_D]) {
+        moveCamera(gps::MOVE_RIGHT);
     }
 }
 
@@ -495,6 +528,10 @@ void initModels() {
     models.push_back(&baseScene);
     models.push_back(&babyYoda);
     models.push_back(&ship);
+
+    modelsColliding.push_back(&baseScene);
+    modelsColliding.push_back(&babyYoda);
+    modelsColliding.push_back(&ship);
 }
 
 void initSkyBox() {
@@ -653,8 +690,8 @@ int main(int argc, const char *argv[]) {
     glCheckError();
     // application loop
     while (!glfwWindowShouldClose(myWindow.getWindow())) {
-        processMovement();
         renderScene();
+        processKeys();
 
         glfwPollEvents();
         glfwSwapBuffers(myWindow.getWindow());

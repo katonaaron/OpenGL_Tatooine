@@ -26,6 +26,9 @@ namespace gps {
         // the camera up direction is unchanged
         void move(glm::vec3 cameraPosition, glm::vec3 cameraTarget);
 
+        // returns the position the camera would have if it moved to the given direction
+        glm::vec3 nextPosition(MOVE_DIRECTION direction, float speed);
+
         //update the camera internal parameters following a camera rotate event
         //yaw - camera rotation around the y axis
         //pitch - camera rotation around the x axis
