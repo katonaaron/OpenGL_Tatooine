@@ -101,7 +101,7 @@ void Sun::_setRadius(GLfloat radius) {
 }
 
 void Sun::_setScale(GLfloat scaleFactor) {
-    Sun::scaleFactor = constrain(scaleFactor, 0.1f, 20.f);
+    Sun::scaleFactor = scaleFactor;
 }
 
 void Sun::_setAngle(GLfloat angle) {

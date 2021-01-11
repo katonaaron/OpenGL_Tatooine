@@ -41,9 +41,12 @@ glm::mat4 projection;
 // Directional light = Sun
 Sun sun;
 glm::vec3 sunRotateAxis(1.0f, 1.0f, 1.0f);
-GLfloat sunRadius = 300.0f;
-GLfloat sunAngle = 180.0f;
-GLfloat sunScale = 5.0f;
+const GLfloat sunRotationRadius = 400.0f;
+GLfloat sunRotationAngle = 180.0f;
+GLfloat sunScaleRadius = 30.0f;
+const GLfloat sunScaleMin = 1.0f;
+const GLfloat sunScaleMax = 100.0f;
+const GLfloat sunScaleDelta = 1.0f;
 DirLight sunLight = {
         .direction = glm::vec3(), // calculated based on the position of the sun
         .ambient =  glm::vec3(1.0f, 1.0f, 1.0f), //white light
@@ -242,7 +245,9 @@ void updateSunlight() {
     // send the directional sunlight data to the shaders which depend on it
     for (const auto &shader : shadersLights) {
         shader->useShaderProgram();
-        if (sun.getPosition().y > 0) {
+        // the sun has a unit radius. By scaling it, the radius will proportionally change.
+        // turn of sunlight if the sun is fully beneath the ground
+        if (sun.getPosition().y + sunScaleRadius > 0) {
             sendDirLight(sunLight, *shader);
         } else {
             sendDirLight(nightLight, *shader);
@@ -261,6 +266,11 @@ void updateSunlight() {
 void rotateSun(float angle) {
     sun.rotate(angle);
     updateSunlight();
+}
+
+void scaleSun(float delta) {
+    sunScaleRadius = glm::clamp(sunScaleRadius + delta, sunScaleMin, sunScaleMax);
+    sun.setScale(sunScaleRadius);
 }
 
 void updateFog() {
@@ -359,21 +369,21 @@ void processMovement() {
 
     if (pressedKeys[GLFW_KEY_Q]) {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
-            sun.scale(-1.0f);
+            scaleSun(-sunScaleDelta);
         } else if (pressedKeys[GLFW_KEY_LEFT_SHIFT]) {
             increaseFogDensity(-fogDelta);
         } else {
-            rotateSun(-1.0f);
+            rotateSun(1.0f);
         }
     }
 
     if (pressedKeys[GLFW_KEY_E]) {
         if (pressedKeys[GLFW_KEY_LEFT_CONTROL]) {
-            sun.scale(1.0f);
+            scaleSun(sunScaleDelta);
         } else if (pressedKeys[GLFW_KEY_LEFT_SHIFT]) {
             increaseFogDensity(fogDelta);
         } else {
-            rotateSun(1.0f);
+            rotateSun(-1.0f);
         }
     }
 
@@ -453,7 +463,7 @@ void initShaders() {
 
 void initLights() {
     sun.LoadModel("models/sun/sun.obj");
-    sun.init(sunRotateAxis, sunRadius, sunScale, sunAngle);
+    sun.init(sunRotateAxis, sunRotationRadius, sunScaleRadius, sunRotationAngle);
 
     // Create firefly model for each point light
     for (const auto &pointLight : pointLights) {
