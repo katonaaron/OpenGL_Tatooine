@@ -23,11 +23,11 @@ vec3 GetNormal()
 {
     vec3 a = vec3(gs_in[1].posLocal) - vec3(gs_in[0].posLocal);
     vec3 b = vec3(gs_in[2].posLocal) - vec3(gs_in[1].posLocal);
-    return normalize(cross(a, b));
+    return cross(a, b);
 }
 
 void main() {
-    vec3 triangleNormal = normalMatrix * GetNormal();
+    vec3 triangleNormal = normalize(normalMatrix * GetNormal());
 
     // Process the vertices of the triangle
     // Pass-through the data from the vertex shader
