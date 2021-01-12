@@ -1,0 +1,165 @@
+\section{Functions and algorithms} 
+
+\subsection{Lighting}
+
+The application implements the \textbf{Blinn-Phong} lighting model in the \verb|basic.frag| shader. The algorithm is the same as in the laboratory works, but the code is modified to tailor it to the application:
+
+\begin{itemize}
+ \item The fields of the directional and point lights are sent in structures.
+ \item The ambient, diffuse and specular coefficients are constructed in separate variables, and summed together at the end.
+ \item \textit{Multiple point lights} can be sent from the application to the shader, and each will be considered in the final color.
+ \item Other refactoring to increase code reuse.
+\end{itemize}
+
+For the lighting of the \textbf{sun} it was needed only to apply its diffuse texture without any modifiers. The \textbf{fireflies} however are colored to the color of their emitted light. Thus for them another shader was created which draws these objects with a single color.
+
+
+
+
+
+
+\subsection{Shadows}
+
+The application applies the \textbf{shadow mapping} algorithm from the laboratory guide, however it is \textit{improved} to provide higher quality results. The shadows are only considered for the directional light source.
+
+\subsubsection{Percentage-close filtering}
+
+\verb|basic.frag|
+
+In order to provide softer shadows the percentage-close filtering technique \cite{learnopengl} was used. When a fragment's depth is compared to the corresponding value in the depth map, the depth is compared also with the 8 neighbors of the mapped pixel in the texture. At the end the average of the shadow values will be the final shadow value of the fragment.
+
+\subsubsection{Light space transformation matrix optimization}
+
+\verb|shadow.cpp|
+
+The goal is to create a correct view transformation and to set the bounds of the orthographic projection such that the viewing volume contains all the scene and its size is minimal.
+
+The direction of the light is the same as the direction of the sun. It is normalized, therefore by adding $(0,0,0)$ to it, it can be considered as a point from unit distance from the origin towards the light direction. This point $P_c(x, y, z)$ is the \textbf{camera position} for the view matrix.
+
+The \textbf{up vector} is computed differently. The camera looks at the origin, but it's height is not always 0. Therefore the up vector should not be always the OY axis. In the computation I considered two cases. In the \textbf{first case}, the camera is in the XOZ plane, i.e. $y = 0$. In this case the up vector is $(0, 1, 0)$. In \textbf{the second case} the camera is above the scene, i.e. $y > 0$. In this case the up vector is the vector which is perpendicular to the viewing direction and passes through $P_c = (x, y, z)$ and another point on the OY $P = (0, y', 0)$. After some trigonometric calculations I obtained the following formula:
+
+\begin{equation}
+ y' - y = \frac{x^2 + z^2}{y},\; y > 0
+\end{equation}
+
+Thus the up vector in the second case is:
+
+\begin{equation}
+\label{eq:up_up}
+U       = P - P_c 
+        = (0, y', 0) - (x, y, z) 
+        = \langle-x, y - y', -z\rangle
+        = \langle-x, \frac{x^2 + z^2}{y}, -z\rangle
+,\; y > 0
+\end{equation}
+
+In the \textbf{third case}, the camera is below the scene, thus $y < 0$. If we apply formula \ref{eq:up_up} the camera will look at the scene upside down. Therefore in this case the up vector is negated.
+
+\begin{equation}
+\label{eq:up_down}
+U       = P_c - P
+        = \langle x, \frac{x^2 + z^2}{-y}, z\rangle
+,\; y < 0
+\end{equation}
+
+After the view matrix is obtained, the next step is to calculate the orthographic \textbf{projection matrix}. An option could be to set view volume bounds to the largest absolute value from the scene coordinates. However this would consider also some unneeded regions, thus lowering the final quality.
+
+To \textbf{calculate the view volume bounds}, the \textit{bounding box} of the scene was computed which holds the maximum and minimum $x$, $y$ and $z$ values of the vertices of the scene. These 8 coordinates (vertices of the bounding box) are then \textbf{transformed to the light space}. After that the $z$ values are reversed. Then we find the maximum and minimum coordinates from these eight. The resulting six coordinates ($x_{min}, x_{max}, y_{min}, y_{max}, z_{min}, z_{max}$) will be the bounds of the viewing volume in the orthographic projection. \textbf{The resulting viewing volume contains entirely the scene, and its size is minimal.}
+
+
+
+
+
+
+\subsection{Sun rotation}
+
+\verb|Sun.cpp|, \verb|util.cpp|
+
+The goal is to \textbf{rotate the sun around an arbitrary axis}, which passes through the origin, with a given angle and radius.
+
+The first step is to normalize the given axis. Then we need to find a vector which is perpendicular to the axis. There are infinite number of such vectors so any of them can be chosen. Therefore the perpendicular vector is obtained by a cross product between the axis and another non-parallel vector: for $\langle 1, 0, 0 \rangle$ we choose $\langle 0, 1, 0 \rangle$, and for any other vector we choose $\langle 1, 0, 0 \rangle$.
+
+After the perpendicular vector is obtained, the sun, whose initial position is at the origin, is \textbf{translated} towards this direction a number of units that is equal to the radius. After transformation the distance between the sun and the given axis in exactly the radius.
+
+To \textbf{rotate the sun }with a given angle, a rotation matrix must be created which rotates it around the given axis. If we apply this transformation after the previous translation, the \textbf{radius is preserved} thus the goal is achieved.
+
+
+
+
+
+
+
+\subsection{Camera animation}
+
+\verb|CameraAnimation.cpp|
+
+To animate the camera, \textbf{centripetal Catmull-Rom splines} \cite{splineCatmullRom} are created. The algorithm interpolates the points between two control points $P_1$, $P_2$ when another two points are given: $P_0$, $P_3$. I adapted the algorithm in order to animate the camera. 
+
+A list of \textbf{control points} are defined which describe the route of the camera. The points are placed around the objects that should be highlighted.
+
+To \textbf{store the animation state}, the index of the current point is saved in a field, the current point being the one the camera just surpassed. Another variable is stored, $t$, which is the parameter in the curve between the current point and the next point. This defines the next interpolated point.
+
+To not depend on the framerate, the duration between each animation is measured and added to $t$ after being multiplied by the animation speed. This way at each animation step the next point is calculated.
+
+Before calling the algorithm one must \textbf{select four control points}, which will be the current control point, the previous one in the list, and the next two.
+
+The point obtained by the algorithm for the given $t$ will be the new \textbf{camera position}. The \textbf{camera target} is obtained by computing the direction from the previous camera position to the current one and adding it to the current camera position. This way the \textbf{camera always looks at the direction of its movement}, it follows the spline.
+
+After the \textbf{camera reaches the next control point}, the two progress variables are updated: $t$ set to 0, and the current control point variable refers to the next one.
+
+
+
+
+
+\subsection{Camera movement in plane}
+
+The goal is the preserve the height of the camera and move it only in the XOZ plane. 
+
+To implement it, the $y$ coordinates in the camera front direction and in the camera right direction are ignored. The resulting vectors are normalized and used for calculating the next camera position.
+
+
+
+
+
+\subsection{Sandstorm (fog) computation}
+
+The algorithm is the same as in the laboratory guide. Only the color is changed to resemble to a sandstorm.
+
+
+
+
+
+\subsection{Polygonal surface visualization}
+
+\verb|basic.geom|
+
+To draw polygonal surfaces, the surface normal of each triangle must be computed and sent to the fragment shader. This is done in the geometry shader. The cross product is calculated between two edges of the triangle. Then the resulting vector is multiplied with the normal matrix and normalized \cite{learnopengl}.
+
+
+
+
+
+\subsection{Collision detection}
+
+To detect collisions, the application compares the bounding boxes of the objects. 
+
+In the \verb|Model3D| class, while loading the object from a file, the class saves the minimum and maximum coordinates for each mesh in a list. After that, from these bounding boxes it computes the overall \textbf{object bounding box};
+
+The \verb|Model| class which stores its own model matrix, must override the \verb|getBoundingBox()| and \verb|getMeshBoundingBoxes()| methods, because it must apply the modeling transformation to those coordinates.
+
+The \verb|Model3D| class defines the \verb|collidesWith()| function which verifies whether a given bounding box collides with the model or not. To do this it first \textbf{compares with the object bounding box}, than only if they collide, \textbf{compares it to the mesh bounding boxes}.
+
+The main application stores in a list the pointers to the models for which collision detection must be executed. When the user tries to move the camera, the camera bounding box is  
+sent to the \verb|collidesWith()| method of each model in this list. In case of a collision the camera is not moved.
+
+
+
+
+
+\subsection{Animation of object components}
+
+\verb|BabyYoda.cpp|
+
+``Baby Yoda'' moves the rock using the force. To achieve this animation the rock must be separately transformed than the other parts of the object. The rock, the ground and the creature are a single object, loaded using the \verb|Model3D| class.
+
+To achieve the transformation of a single mesh, the \verb|Draw()| function is overridden. In this function before drawing the mesh of the rock, a new model matrix is sent to the shader. After the mesh is drawn, the model matrix is changed back to the one stored inside the \verb|Model| superclass.

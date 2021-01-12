@@ -1,0 +1,56 @@
+\chapter{Subject specification} 
+
+The scope of the application is to visualize photo-realistically a scene, which was inspired by the well-known Star Wars saga. The scene presents the desert planet of Tatooine, a key place in the story, where the star wars saga began. The user of the application can explore this planet and meet with some famous characters from the movies.
+
+\subsubsection{Key aspects}
+
+The following aspects were implemented:
+
+\begin{itemize}
+
+\item Camera movement using keyboard and mouse
+
+\begin{itemize}
+ \item Preserving the height while moving
+\end{itemize}
+
+\item Camera movement animation
+
+\item Translation and rotation in animation
+
+\item Rotation and scaling using keyboard and mouse
+
+\begin{itemize}
+ \item Rotation of the sun around an arbitrary axis
+\end{itemize}
+
+\item Multiple light sources:
+
+\begin{itemize}
+ \item 1 x directional
+ \item 2 x point light sources (generic implementation for any number of point lights)
+\end{itemize}
+
+\item viewing solid, wireframe objects, polygonal and smooth surfaces
+
+\item texture mapping and materials
+
+\item shadow mapping
+
+\begin{itemize}
+ \item Optimization of the light space transformation matrix by adapting to the dimensions to the scene
+ 
+ \item Percentage close filtering
+\end{itemize}
+
+\item Animation of object components
+
+\item Collision detection
+
+\item Sandstorm (fog)
+
+\item Skybox for day and for night
+
+\item Handling window resize
+
+\end{itemize}

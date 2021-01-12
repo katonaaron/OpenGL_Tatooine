@@ -1,0 +1,12 @@
+\section{Class hierarchy} 
+
+
+To improve the performance, one design goal was to compute or transmit data only when needed. Therefore the camera, projection, light space transformation matrices, the fog density, the light direction and all other variable uniform values are sent to the shaders only when they change. The constant uniform values are sent only at the beginning of the program. In order to update the shaders when a uniform value changes, pointers to shaders are stored in lists, for each set of uniform variables a separate list was created. On the change of a value, the corresponding list is traversed and each shader is updated with the new value.
+
+As for the model and normal matrices, they must be sent to the shader each time they are drawn. However the calculation of these matrices can be omitted if no other transformation was applied to the model. For this purpose, the \verb|Model| class was created which extends from the \verb|Model3D| class. It stores the model and normal matrices, which can be requested from it before the \verb|Draw()| method is called.
+
+The \verb|ColoredModel| class extend from the \verb|Model| class, by also storing a \verb|color| field.
+
+The \verb|BabyYoda| class extend from the \verb|Model| class, by providing \verb|startAnimation()| and \verb|stopAnimation()| methods and overriding the \verb|Draw()| function to draw the mesh of the rock using a different model matrix.
+
+The \verb|Sun| class extend from the \verb|Model3D| class. Instead of storing a single model matrix, it stores separately the rotation, translation and scale matrices. Therefore in the future it can perform additional rotations and scalings. This class performs rotation around a given axis with a given radius and angle.
